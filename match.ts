@@ -423,19 +423,17 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     st.zone = result.nextZone;
     attackCount++;
 
-    if (result.possessionChange) {
-      st.possession = isHome ? 'away' : 'home';
-      carrierId = null;
-      consecutivePasses = 0;
-      attackCount = 0;
-    } else if (result.isShot) {
-      // Şut sonrası kaleci kontrolü ve yeni hücum başlangıcı.
-      st.possession = isHome ? 'away' : 'home';
-      carrierId = null;
-      consecutivePasses = 0;
-      attackCount = 0;
-    } else if (result.isCorner) {
+    if (result.isCorner) {
+      // Korner, şut/orta savunmadan sekse de hücum eden takımda kalır.
       st.possession = isHome ? 'home' : 'away';
+      st.zone = 10;
+      carrierId = null;
+      attackCount = 0;
+    } else if (result.possessionChange || result.isShot) {
+      // Top kaybı veya kaleci kontrolü yeni hücum sekansını başlatır.
+      st.possession = isHome ? 'away' : 'home';
+      carrierId = null;
+      attackCount = 0;
     } else {
       // Başarılı pas/çalımda takım topu ve hücum sekansını korur.
       carrierId = null;
