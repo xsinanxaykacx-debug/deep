@@ -14,7 +14,9 @@ describe('Golden senaryosu — scripted pas', () => {
     expect(afterPass).toBeDefined();
     expect(afterPass?.tickId).toBe(11);
     expect(afterPass?.ball.ownerId).toBeNull();
-    expect(Math.hypot(afterPass!.ball.velocity.x, afterPass!.ball.velocity.y)).toBeCloseTo(15, 5);
+    const passSpeed = Math.hypot(afterPass!.ball.velocity.x, afterPass!.ball.velocity.y);
+    expect(passSpeed).toBeGreaterThanOrEqual(13.5);
+    expect(passSpeed).toBeLessThan(16.5);
   });
 
   it('pas sonrası serbest top ilerler ve hedef oyuncu home_10 topu alır', () => {

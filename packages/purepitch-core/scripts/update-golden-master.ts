@@ -21,9 +21,9 @@ writeFileSync(
   outPath,
   JSON.stringify(
     {
-      _comment: 'PurePitch Engine v5-P0e-1 golden master — AI RNG stream ayrımı ve temas sahipliği dahil. Fizik doğruluğu iddiası değildir.',
+      _comment: 'PurePitch Engine v5-P0e-2 golden master — AI RNG stream ayrımı ve temas sahipliği dahil. Fizik doğruluğu iddiası değildir.',
       _generatedAt: new Date().toISOString(),
-      _engine: 'PurePhysicsEngine v5-P0e-1',
+      _engine: 'PurePhysicsEngine v5-P0e-2',
       _note: 'v5\'te bilinçli davranış değişikliği olursa bu dosya yenilenir.',
       scenario: SCENARIO,
       tickCount: SCENARIO.ticks,

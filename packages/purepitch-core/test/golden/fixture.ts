@@ -146,7 +146,7 @@ export function createDeterministicIntents(
   return intents;
 }
 
-/** Golden senaryosu için sabit aksiyon katmanı: tick 10'da home_9 pas verir. */
+/** Golden senaryosu için scripted aksiyon: tick 10'da home_9 seed'li hız varyasyonuyla pas verir. */
 export function createScriptedIntents(
   state: MatchState,
   tick: number,
@@ -160,7 +160,8 @@ export function createScriptedIntents(
       targetVelocity: { x: 0, y: 0 },
       sprint: false,
       passTargetId: 'home_10',
-      passSpeed: 15,
+      // Seed'li AI RNG: scripted pas hızı 13.5–16.5 m/s aralığında değişir.
+      passSpeed: 15 * (0.9 + rng.next() * 0.2),
     });
   }
 
