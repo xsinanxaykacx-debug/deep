@@ -24,6 +24,10 @@ export interface MatchStats {
 
   homeShots: number;
   awayShots: number;
+  homeShotsOnTarget: number;
+  awayShotsOnTarget: number;
+  homeSaves: number;
+  awaySaves: number;
 
   homeCorners: number;
   awayCorners: number;
@@ -96,6 +100,10 @@ export function simulateMatch(
 
     homeShots: 0,
     awayShots: 0,
+    homeShotsOnTarget: 0,
+    awayShotsOnTarget: 0,
+    homeSaves: 0,
+    awaySaves: 0,
 
     homeCorners: 0,
     awayCorners: 0,
@@ -187,12 +195,6 @@ export function simulateMatch(
           activeDef
         );
 
-        if (isHome) {
-          stats.homeShots++;
-        } else {
-          stats.awayShots++;
-        }
-
         if (result.goal) {
           if (isHome) {
             stats.homeScore++;
@@ -209,7 +211,8 @@ export function simulateMatch(
           carrier,
           st.zone,
           activeDef,
-          activeAtk
+          activeAtk,
+          isHome ? awayTeam.tactics : homeTeam.tactics
         );
 
         if (result.isCorner) {
@@ -235,24 +238,40 @@ export function simulateMatch(
         result = resolveDribble(
           carrier,
           st.zone,
-          activeDef
+          activeDef,
+          isHome ? awayTeam.tactics : homeTeam.tactics
         );
       } else {
-        const style = isHome
-          ? homeTeam.tactics.style
-          : awayTeam.tactics.style;
+        const tactics = isHome
+          ? homeTeam.tactics
+          : awayTeam.tactics;
 
         const target = choosePassTarget(
           st.zone,
           carrier,
-          style
+          tactics
         );
 
         result = resolvePass(
           carrier,
           target,
-          activeDef
+          activeDef,
+          isHome ? awayTeam.tactics : homeTeam.tactics
         );
+      }
+
+      // Şut, isabet ve kurtarış istatistikleri aksiyon sonucundan toplanır.
+      if (result.isShot) {
+        if (isHome) stats.homeShots++;
+        else stats.awayShots++;
+      }
+      if (result.onTarget) {
+        if (isHome) stats.homeShotsOnTarget++;
+        else stats.awayShotsOnTarget++;
+      }
+      if (result.saved) {
+        if (isHome) stats.awaySaves++;
+        else stats.homeSaves++;
       }
 
       // Faul ve kart kontrolü.
@@ -344,7 +363,7 @@ export function simulateMatch(
       }
 
       item.player.condition = clamp(
-        item.player.condition - 0.2,
+        item.player.condition - (0.12 + homeTeam.tactics.pressing / 500),
         20,
         100
       );
@@ -356,7 +375,7 @@ export function simulateMatch(
       }
 
       item.player.condition = clamp(
-        item.player.condition - 0.2,
+        item.player.condition - (0.12 + awayTeam.tactics.pressing / 500),
         20,
         100
       );
