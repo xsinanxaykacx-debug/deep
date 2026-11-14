@@ -39,6 +39,3 @@ console.log(`Tick sayısı: ${SCENARIO.ticks}`);
 console.log(`Hash sayısı: ${result.hashes.length} (beklenen: ${SCENARIO.ticks + 1})`);
 console.log(`Başlangıç hash: ${result.hashes[0]}`);
 console.log(`Son hash:      ${result.hashes[result.hashes.length - 1]}`);
-console.log('GOLDEN_HASHES_BEGIN');
-console.log(JSON.stringify(result.hashes));
-console.log('GOLDEN_HASHES_END');

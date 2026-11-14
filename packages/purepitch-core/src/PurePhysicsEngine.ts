@@ -182,7 +182,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
       const dx = owner.position.x - tackler.position.x;
       const dy = owner.position.y - tackler.position.y;
       const distSq = dx * dx + dy * dy;
-      if (distSq > rangeSq) continue;
+      if (distSq > rangeSq + 1e-9) continue;
 
       next.ball.ownerId = id;
       next.ball.controlStrength = 1;

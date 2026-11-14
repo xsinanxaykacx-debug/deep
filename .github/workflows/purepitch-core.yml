@@ -35,8 +35,6 @@ jobs:
         run: npm ci
       - name: TypeScript build
         run: npm run build
-      - name: TEMP generate golden master for review
-        run: npm run golden:update
       - name: Golden determinism and regression tests
         run: npm run test:golden -- --reporter=verbose
       - name: Physics unit tests
