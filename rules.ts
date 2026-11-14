@@ -130,11 +130,11 @@ export function checkFoul(
     };
   }
 
-  const cardChance = (aggression / 20) * 0.24;
+  const cardChance = (aggression / 20) * 0.20;
 
   let card: 'yellow' | 'red' | null = null;
 
-  if (chance(cardChance * 0.008)) {
+  if (chance(cardChance * 0.005)) {
     card = 'red';
   } else if (chance(cardChance)) {
     card = 'yellow';
@@ -261,7 +261,7 @@ export function resolveShot(
   // Gol olasılığı isabetli şut koşuluna bağlıdır; uzak şut ve baskı
   // kaliteyi düşürür, kalecinin seviyesi doğrudan karşılık verir.
   const goalProbability = clamp(
-    0.40 +
+    0.45 +
     (shotPower - 10) * 0.018 +
     (composure - 10) * 0.006 -
     (goalkeeperValue - 10) * 0.014 -
@@ -272,7 +272,7 @@ export function resolveShot(
 
   const isGoal = goalkeeperError || (onTarget && chance(goalProbability));
   const deflectedForCorner = !isGoal && !onTarget && defensivePressure > 0.45 &&
-    chance(0.18 + defensivePressure * 0.25);
+    chance(0.22 + defensivePressure * 0.28);
 
   let text;
   if (isGoal) text = `GOL! ${carrier.name} (Zone ${zone})`;
@@ -390,7 +390,7 @@ export function resolveCross(
     : 5;
 
   // Korner.
-  if (chance(0.28)) {
+  if (chance(0.35)) {
     return {
       success: false,
       nextZone: 10 as PitchZone,
