@@ -5,7 +5,7 @@
 
 import {
   MatchState, PlayerIntent, IRandomSource, IPhysicsEngine, BallState
-} from './purepitch_v3';
+} from './purepitch_v3.js';
 
 export interface PhysicsConfig {
   readonly playerRadius: number;
