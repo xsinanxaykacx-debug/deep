@@ -1,5 +1,6 @@
 
 import type { PitchZone } from './pitch';
+import { PITCH_ZONES } from './pitch';
 import type { Team } from './core';
 
 import {
@@ -16,7 +17,7 @@ import {
   choosePassTarget
 } from './rules';
 
-import { rng } from './chance';
+import { rng, chance } from './chance';
 
 export interface MatchStats {
   homeScore: number;
@@ -129,8 +130,16 @@ export function simulateMatch(
   for (let min = 1; min <= totalMinutes; min++) {
     st.minute = min;
 
-    // Dakika başına 1-3 aksiyon.
-    const actions = 1 + rng(3);
+    // Tempo aksiyon sıklığını etkiler; yüksek tempo daha çok aksiyon,
+    // düşük tempo daha kontrollü ve yavaş oyun üretir.
+    const activeTeam = st.possession === 'home' ? homeTeam : awayTeam;
+    const tempo = clamp(activeTeam.tactics.tempo ?? 50, 0, 100);
+    let actions = 1 + rng(3);
+    if (tempo > 55 && chance((tempo - 55) / 180)) {
+      actions = Math.min(4, actions + 1);
+    } else if (tempo < 45 && chance((45 - tempo) / 180)) {
+      actions = Math.max(1, actions - 1);
+    }
 
     for (
       let actionIndex = 0;
@@ -141,6 +150,8 @@ export function simulateMatch(
 
       const atk = isHome ? H : A;
       const def = isHome ? A : H;
+      const attackingTeam = isHome ? homeTeam : awayTeam;
+      const defendingTeam = isHome ? awayTeam : homeTeam;
 
       const attackingRedCards = isHome
         ? homeRedCards
@@ -175,7 +186,8 @@ export function simulateMatch(
 
       const action = chooseAction(
         carrier,
-        st.zone
+        st.zone,
+        attackingTeam.tactics
       );
 
       let result: ReturnType<typeof resolveShot>;
@@ -209,8 +221,14 @@ export function simulateMatch(
           carrier,
           st.zone,
           activeDef,
-          activeAtk
+          activeAtk,
+          defendingTeam.tactics
         );
+
+        if (result.isShot) {
+          if (isHome) stats.homeShots++;
+          else stats.awayShots++;
+        }
 
         if (result.isCorner) {
           if (isHome) {
@@ -235,23 +253,21 @@ export function simulateMatch(
         result = resolveDribble(
           carrier,
           st.zone,
-          activeDef
+          activeDef,
+          defendingTeam.tactics
         );
       } else {
-        const style = isHome
-          ? homeTeam.tactics.style
-          : awayTeam.tactics.style;
-
         const target = choosePassTarget(
           st.zone,
           carrier,
-          style
+          attackingTeam.tactics
         );
 
         result = resolvePass(
           carrier,
           target,
-          activeDef
+          activeDef,
+          defendingTeam.tactics
         );
       }
 
@@ -326,14 +342,22 @@ export function simulateMatch(
         }
       }
 
-      // Aksiyonun saha konumu uygulanır.
-      st.zone = result.nextZone;
-
-      // Topun kontrolü değişirse diğer takım oynar.
+      // Sonuç bölgesi topa sahip olan takımın hücum yönüne göre tutulur.
       if (result.possessionChange) {
-        st.possession = isHome
-          ? 'away'
-          : 'home';
+        st.possession = isHome ? 'away' : 'home';
+
+        if (result.goal) {
+          // Gol sonrası santra.
+          st.zone = 4 as PitchZone;
+        } else if (action === 'shot') {
+          // Kaleci kontrolü veya aut sonrası kale önü başlangıcı.
+          st.zone = 1 as PitchZone;
+        } else {
+          // Pas/çalım/orta kaynaklı top kaybında saha yönünü çevir.
+          st.zone = PITCH_ZONES[result.nextZone].mirrorZone;
+        }
+      } else {
+        st.zone = result.nextZone;
       }
     }
 
@@ -343,8 +367,11 @@ export function simulateMatch(
         continue;
       }
 
+      const fatigue = 0.14 +
+        clamp(homeTeam.tactics.pressing, 0, 100) * 0.00045 +
+        clamp(homeTeam.tactics.tempo, 0, 100) * 0.00025;
       item.player.condition = clamp(
-        item.player.condition - 0.2,
+        item.player.condition - fatigue,
         20,
         100
       );
@@ -355,8 +382,11 @@ export function simulateMatch(
         continue;
       }
 
+      const fatigue = 0.14 +
+        clamp(awayTeam.tactics.pressing, 0, 100) * 0.00045 +
+        clamp(awayTeam.tactics.tempo, 0, 100) * 0.00025;
       item.player.condition = clamp(
-        item.player.condition - 0.2,
+        item.player.condition - fatigue,
         20,
         100
       );
