@@ -18,7 +18,7 @@ export interface PhysicsConfig {
 
 export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   playerRadius: 0.45,
-  maxAcceleration: 8.0,
+  maxAcceleration: 8.5,
   groundFriction: 0.98,
   ballOffset: 0.4,
   restitution: 0.5,
