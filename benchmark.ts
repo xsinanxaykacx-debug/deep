@@ -158,6 +158,7 @@ function main(): void {
   let totalPasses = 0;
   let totalPassesCompleted = 0;
   let totalPossessionMinutes = 0;
+  let totalMatchMinutes = 0;
   let totalTackles = 0;
   let totalOffsides = 0;
   let totalSubstitutions = 0;
@@ -210,6 +211,7 @@ function main(): void {
     totalPasses += stats.homePasses + stats.awayPasses;
     totalPassesCompleted += stats.homePassesCompleted + stats.awayPassesCompleted;
     totalPossessionMinutes += stats.homePossessionMinutes;
+    totalMatchMinutes += result.minute;
     totalTackles += stats.homeTackles + stats.awayTackles;
     totalOffsides += stats.homeOffsides + stats.awayOffsides;
     totalSubstitutions += stats.homeSubstitutions + stats.awaySubstitutions;
@@ -300,7 +302,7 @@ function main(): void {
     averageRedCards: round(totalRedCards / MATCH_COUNT, 3),
     averagePasses: round(totalPasses / MATCH_COUNT, 2),
     passCompletionPct: percent(totalPassesCompleted, totalPasses),
-    averagePossessionPctHome: percent(totalPossessionMinutes, MATCH_COUNT * 90),
+    averagePossessionPctHome: percent(totalPossessionMinutes, totalMatchMinutes),
     averageTackles: round(totalTackles / MATCH_COUNT, 2),
     averageOffsides: round(totalOffsides / MATCH_COUNT, 2),
     averageSubstitutions: round(totalSubstitutions / MATCH_COUNT, 2),
