@@ -313,6 +313,8 @@ export class PurePhysicsEngine implements IPhysicsEngine {
 
   private updateBallPhysics(prevBall: BallState, next: MatchState, dt: number, rng: IRandomSource): void {
     const ball = next.ball;
+    // Double-buffer'da son temas bilgisi de önceki state'ten kopyalanmalıdır.
+    ball.lastTouchId = prevBall.lastTouchId ?? null;
 
     if (prevBall.ownerId) {
       const owner = next.players.get(prevBall.ownerId);

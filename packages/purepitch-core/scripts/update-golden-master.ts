@@ -21,9 +21,9 @@ writeFileSync(
   outPath,
   JSON.stringify(
     {
-      _comment: 'PurePitch Engine v5-P0d-2a golden master — deterministik aksiyonlar dahil. Fizik doğruluğu iddiası değildir.',
+      _comment: 'PurePitch Engine v5-P0d-2b golden master — deterministik aksiyonlar dahil. Fizik doğruluğu iddiası değildir.',
       _generatedAt: new Date().toISOString(),
-      _engine: 'PurePhysicsEngine v5-P0d-2a',
+      _engine: 'PurePhysicsEngine v5-P0d-2b',
       _note: 'v5\'te bilinçli davranış değişikliği olursa bu dosya yenilenir.',
       scenario: SCENARIO,
       tickCount: SCENARIO.ticks,
