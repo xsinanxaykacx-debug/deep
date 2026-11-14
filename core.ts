@@ -2,6 +2,7 @@
 import type { PitchZone, PitchRow, PitchLane } from './pitch';
 import { POSITION_ZONE_WEIGHTS } from './player';
 import type { Player, Position } from './player';
+import { rand } from './chance';
 
 export type Formation =
   | '4-4-2' | '4-1-3-2' | '4-1-2-1-2' | '4-2-2-2' | '4-2-3-1' | '4-2-1-2-1' | '4-3-3' | '4-3-2-1' | '4-3-1-2'
@@ -454,44 +455,70 @@ export function applyTacticModifiers(
   });
 }
 
+const POSITION_FIT: Record<Position, Partial<Record<Position, number>>> = {
+  GK: {},
+  RB: { RB: 1, LB: 0.65, CB: 0.45, DM: 0.45, RW: 0.35, CM: 0.3 },
+  CB: { CB: 1, DM: 0.65, RB: 0.45, LB: 0.45, CM: 0.25 },
+  LB: { LB: 1, RB: 0.65, CB: 0.45, DM: 0.45, LW: 0.35, CM: 0.3 },
+  DM: { DM: 1, CM: 0.85, CB: 0.65, AM: 0.55, RB: 0.45, LB: 0.45 },
+  CM: { CM: 1, DM: 0.85, AM: 0.8, RW: 0.55, LW: 0.55, RB: 0.35, LB: 0.35, ST: 0.25, CB: 0.25 },
+  AM: { AM: 1, CM: 0.8, RW: 0.8, LW: 0.8, ST: 0.65, DM: 0.45 },
+  RW: { RW: 1, LW: 0.7, AM: 0.75, ST: 0.6, RB: 0.55, CM: 0.4 },
+  LW: { LW: 1, RW: 0.7, AM: 0.75, ST: 0.6, LB: 0.55, CM: 0.4 },
+  ST: { ST: 1, AM: 0.65, RW: 0.55, LW: 0.55, CM: 0.3 }
+};
+
+/**
+ * Top taşıyıcıyı rol uyumu, bölge uyumu, karar kalitesi ve kondisyon
+ * ağırlıklarıyla seçer. Ağırlıklı seçim aynı oyuncunun sürekli top
+ * almasını engeller; PRNG seed'i sayesinde sonuçlar tekrarlanabilirdir.
+ */
 export function pickBallCarrier(
   zone: PitchZone,
   lineup: { player: Player; slot: FormationSlot }[]
 ): Player | null {
-  let best: Player | null = null;
-  let bestScore = -1;
+  const candidates: { player: Player; weight: number }[] = [];
 
   for (const { player, slot } of lineup) {
-    if (slot.position === 'GK' || player.position === 'GK') {
-      continue;
-    }
+    if (slot.position === 'GK' || player.position === 'GK') continue;
 
-    // Doğal mevki değil, dizilişteki rol esas alınır.
-    const baseWeight = slotZoneWeight(player, slot, zone);
+    const zoneWeight = slotZoneWeight(player, slot, zone);
     const slotBonus = slot.primaryZone === zone ? 0.3 : 0;
-    const weight = baseWeight + slotBonus;
+    const positionalWeight = zoneWeight + slotBonus;
+    if (positionalWeight <= 0) continue;
 
-    if (weight <= 0) continue;
+    const roleFit = player.position === slot.position ||
+      player.altPositions?.includes(slot.position)
+      ? 1
+      : POSITION_FIT[player.position]?.[slot.position] ?? 0.2;
 
     const decisionSkill = (
-      player.attributes.positioning +
-      player.attributes.decisions
+      player.attributes.positioning + player.attributes.decisions
     ) / 2;
 
-    const condition = Math.max(
-      0,
-      Math.min(100, player.condition)
-    ) / 100;
+    const condition = Math.max(0, Math.min(100, player.condition)) / 100;
+    const weight =
+      positionalWeight *
+      (0.65 + decisionSkill / 40) *
+      (0.55 + condition * 0.45) *
+      roleFit;
 
-    const score = weight * decisionSkill * condition;
-
-    if (score > bestScore) {
-      bestScore = score;
-      best = player;
+    if (Number.isFinite(weight) && weight > 0) {
+      candidates.push({ player, weight });
     }
   }
 
-  return best;
+  if (candidates.length === 0) return null;
+
+  const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
+  let threshold = rand() * totalWeight;
+
+  for (const candidate of candidates) {
+    threshold -= candidate.weight;
+    if (threshold <= 0) return candidate.player;
+  }
+
+  return candidates[candidates.length - 1].player;
 }
 
 /** Projedeki 22 diziliş tanımının tamamını başlangıçta doğrular. */
