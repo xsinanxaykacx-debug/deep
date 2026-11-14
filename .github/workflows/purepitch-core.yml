@@ -35,6 +35,10 @@ jobs:
         run: npm ci
       - name: TypeScript build
         run: npm run build
+      - name: TEMPORARY generate and print P0d-2a golden master
+        run: |
+          npm run golden:update
+          cat test/golden/golden-master.json
       - name: Golden determinism and regression tests
         run: npm run test:golden -- --reporter=verbose
       - name: Physics unit tests
