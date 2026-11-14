@@ -21,10 +21,10 @@ writeFileSync(
   outPath,
   JSON.stringify(
     {
-      _comment: "PurePitch Engine v5-P0e-2 golden master — seed'li scripted pas hızı (±%10), AI RNG altyapısı ve temas sahipliği dahil. Fizik doğruluğu iddiası değildir.",
+      _comment: "PurePitch v6-2 Commit 4a golden master — tick 10 scripted başarılı dribble, 30 tick pickup penceresi ve temas sahipliği dahil. Fizik doğruluğu iddiası değildir.",
       _generatedAt: new Date().toISOString(),
-      _engine: 'PurePhysicsEngine v5-P0e-2',
-      _note: 'v5\'te bilinçli davranış değişikliği olursa bu dosya yenilenir.',
+      _engine: 'PurePhysicsEngine v6-2-Commit-4a',
+      _note: 'v6-2 Commit 4a: tick 10 scripted dribble. Kasıtlı davranış değişikliğinde bu dosya yenilenir.',
       scenario: SCENARIO,
       tickCount: SCENARIO.ticks,
       hashes: result.hashes,

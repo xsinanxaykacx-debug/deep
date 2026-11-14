@@ -147,7 +147,9 @@ export function createDeterministicIntents(
   return intents;
 }
 
-/** Golden senaryosu için scripted aksiyon: tick 10'da home_9 seed'li hız varyasyonuyla pas verir. */
+/** Golden senaryosu için scripted aksiyon: tick 10'da home_9 başarılı bir dribble yapar.
+ * Bu senaryo aksiyonu ek RNG tüketmez; Commit 4a yalnızca dribble mekanizmasını izole eder.
+ */
 export function createScriptedIntents(
   state: MatchState,
   tick: number,
@@ -156,13 +158,12 @@ export function createScriptedIntents(
   const intents = createDeterministicIntents(state, tick, rng);
 
   if (tick === 10 && state.ball.ownerId === 'home_9') {
+    const owner = state.players.get('home_9');
     intents.set('home_9', {
-      kind: 'pass',
-      targetVelocity: { x: 0, y: 0 },
+      kind: 'dribble',
       sprint: false,
-      passTargetId: 'home_10',
-      // Seed'li AI RNG: scripted pas hızı 13.5–16.5 m/s aralığında değişir.
-      passSpeed: 15 * (0.9 + rng.next() * 0.2),
+      dribbleDirection: owner?.facing ?? 0,
+      success: true,
     });
   }
 

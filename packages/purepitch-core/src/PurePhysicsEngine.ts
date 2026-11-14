@@ -339,8 +339,9 @@ export class PurePhysicsEngine implements IPhysicsEngine {
 
   private updateBallPhysics(prevBall: BallState, next: MatchState, dt: number): void {
     const ball = next.ball;
-    // Double-buffer'da son temas bilgisi de önceki state'ten kopyalanmalıdır.
+    // Double-buffer'da son temas ve dribble penceresi önceki state'ten taşınmalıdır.
     ball.lastTouchId = prevBall.lastTouchId ?? null;
+    ball.dribbleUntilTick = prevBall.dribbleUntilTick;
 
     if (prevBall.ownerId) {
       const owner = next.players.get(prevBall.ownerId);
