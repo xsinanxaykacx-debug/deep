@@ -53,6 +53,7 @@ function cloneState(s: MatchState): MatchState {
       ownerId: s.ball.ownerId,
       ...(s.ball.lastTouchId ? { lastTouchId: s.ball.lastTouchId } : {}),
       controlStrength: s.ball.controlStrength,
+      dribbleUntilTick: s.ball.dribbleUntilTick,
     },
     players: clonedPlayers,
     playerOrder: [...s.playerOrder],

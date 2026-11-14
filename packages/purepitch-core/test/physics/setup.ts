@@ -32,6 +32,7 @@ export function makeBall(overrides: Partial<BallState> = {}): BallState {
     ownerId: null,
     lastTouchId: null,
     controlStrength: 0,
+    dribbleUntilTick: 0,
     ...overrides
   };
 }

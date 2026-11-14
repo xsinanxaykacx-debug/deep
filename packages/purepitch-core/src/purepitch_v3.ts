@@ -38,6 +38,8 @@ export interface BallState {
   /** Son pas/şut temasını yapan oyuncu; top ondan uzaklaşana kadar self-pickup engellenir. */
   lastTouchId?: string | null;
   controlStrength: number;
+  /** Aktif dribble pickup penceresinin biteceği tick; 0 = aktif pencere yok. */
+  dribbleUntilTick: number;
 }
 
 export interface MatchState {

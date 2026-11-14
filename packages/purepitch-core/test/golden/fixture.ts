@@ -98,6 +98,7 @@ export function createFixtureState(): MatchState {
     ownerId: 'home_9',
     lastTouchId: null,
     controlStrength: 1,
+    dribbleUntilTick: 0,
   };
 
   // Başlangıç sahipliği ile oyuncu/top konumu tutarlı olsun.

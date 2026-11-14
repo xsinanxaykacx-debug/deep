@@ -96,6 +96,7 @@ export function stateToBytes(state: MatchState): Uint8Array {
   // Eski baseline ile uyum için null/undefined alan byte dizisine eklenmez.
   if (state.ball.lastTouchId) pushStr(state.ball.lastTouchId);
   pushF64(state.ball.controlStrength);
+  pushU32(state.ball.dribbleUntilTick);
 
   // Oyuncular — playerOrder sırasıyla
   for (const id of state.playerOrder) {
@@ -179,6 +180,7 @@ export function diffState(a: MatchState, b: MatchState): StateDiff[] {
   push('ball.ownerId', a.ball.ownerId, b.ball.ownerId);
   push('ball.lastTouchId', a.ball.lastTouchId ?? null, b.ball.lastTouchId ?? null);
   push('ball.controlStrength', a.ball.controlStrength, b.ball.controlStrength);
+  push('ball.dribbleUntilTick', a.ball.dribbleUntilTick, b.ball.dribbleUntilTick);
 
   for (const id of a.playerOrder) {
     const pa = a.players.get(id);
