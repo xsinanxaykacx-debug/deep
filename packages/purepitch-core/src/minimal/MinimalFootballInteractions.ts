@@ -310,7 +310,7 @@ export function resolveShot(input: ShotInput): ShotResult {
 export function decideAttackerAction(input: AttackerDecisionInput): AttackerDecision {
   const distance = Math.max(0, input.distanceToGoal);
   const pressure = unit(1 - (input.defenderDistance - 0.5) / 4);
-  const shootingOpportunity = unit((18 - distance) / 15)
+  const shootingOpportunity = (0.05 + 0.95 * unit((18 - distance) / 15))
     * (input.shootingLaneOpen ? 1 : 0.42);
   const dribbleOpportunity = unit(0.25 + pressure * 0.55 + (input.shootingLaneOpen ? 0 : 0.2));
   const decisionQuality = (rating(input.player.mental.decision)
