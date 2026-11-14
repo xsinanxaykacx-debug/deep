@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/purepitch-core-isolated
+      - feature/purepitch-minimal-football-slice
     paths:
       - "packages/purepitch-core/**"
       - ".github/workflows/purepitch-core.yml"
