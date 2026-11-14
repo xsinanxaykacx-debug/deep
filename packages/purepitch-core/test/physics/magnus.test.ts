@@ -19,6 +19,7 @@ function makeBall(overrides: Partial<BallState> = {}): BallState {
     spin: { x: 0, y: 0, z: 0 },
     ownerId: null,
     controlStrength: 0,
+    dribbleUntilTick: 0,
     ...overrides
   };
 }
