@@ -350,7 +350,8 @@ export function simulateMatch(home: Team, away: Team): MatchState {
         carrierId = null;
       }
       if (result.goal) {
-        if (isHome) stats.homeScore++; else stats.awayScore++;
+        if (isHome) { stats.homeScore++; st.homeScore++; }
+        else { stats.awayScore++; st.awayScore++; }
         st.events.push(`${minute}' ${result.text}`);
       }
     } else if (action === 'dribble') {
