@@ -16,4 +16,20 @@ describe('Golden senaryosu — scripted pas', () => {
     expect(afterPass?.ball.ownerId).toBeNull();
     expect(Math.hypot(afterPass!.ball.velocity.x, afterPass!.ball.velocity.y)).toBeCloseTo(15, 5);
   });
+
+  it('pas sonrası serbest top ilerler ve hedef oyuncu home_10 topu alır', () => {
+    const result = runScenario({
+      ticks: 120,
+      captureStates: true,
+      intentSeed: INTENT_SEED,
+      physicsSeed: FIXTURE_SEED
+    });
+    const states = result.states ?? [];
+    const firstPickup = states.slice(12).find((state) => state.ball.ownerId !== null);
+
+    console.log(
+      `P0d-2b pickup: tick=${firstPickup?.tickId ?? 'none'}, owner=${firstPickup?.ball.ownerId ?? 'none'}`
+    );
+    expect(states.some((state) => state.ball.ownerId === 'home_10')).toBe(true);
+  });
 });

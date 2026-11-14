@@ -108,6 +108,26 @@ describe('pickup — deterministik top kontrolü', () => {
     expect(next.ball.ownerId).toBe('home_1');
   });
 
+  it('pickup sonrası aynı tick içinde rakip tackle güncel top sahibine uygulanır', () => {
+    const ownerCandidate = makePlayer('home_1', 'home', { x: 0, y: 0 });
+    const tackler = makePlayer('away_1', 'away', { x: 0.8, y: 0 });
+    const ball = makeBall({ position: { x: 0, y: 0, z: 0.1 } });
+    const current = makeEmptyState([ownerCandidate, tackler], ball);
+    const next = makeEmptyState([ownerCandidate, tackler], ball);
+    const intents = new Map([
+      ['away_1', {
+        kind: 'tackle' as const,
+        targetVelocity: { x: 0, y: 0 },
+        sprint: false,
+        tackleTargetId: 'home_1'
+      }]
+    ]);
+
+    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+
+    expect(next.ball.ownerId).toBe('away_1');
+  });
+
   it('top havadaysa z 0.5 metrenin üzerindeyken pickup yapılmaz', () => {
     const player = makePlayer('home_1', 'home', { x: 0, y: 0 });
     const ball = makeBall({ position: { x: 0, y: 0, z: 1 } });
