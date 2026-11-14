@@ -76,9 +76,10 @@ export function runScenario(config: ScenarioConfig): ScenarioResult {
   const states: MatchState[] | null = capture ? [cloneState(current)] : null;
 
   const rngProvider = new SeededRandomProvider(intentSeed);
+  // Fixture akışı P0d-2 ile aynı kalır: tek AI stream'i tick'ler boyunca tüketilir.
+  const aiRng = rngProvider.forAI(0);
 
   for (let t = 0; t < ticks; t++) {
-    const aiRng = rngProvider.forAI(current.tickId);
     const intents = createScriptedIntents(current, t, aiRng);
 
     engine.step(current, intents, next, 1 / 60);

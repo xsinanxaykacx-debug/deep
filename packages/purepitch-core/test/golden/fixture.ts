@@ -27,9 +27,9 @@ export class SeededRandomProvider implements IRandomProvider {
   private derive(streamId: number, tickId: number): number {
     return (this.masterSeed ^ Math.imul(streamId, 0x9E3779B1) ^ tickId) >>> 0;
   }
-  forAI(tickId: number): IRandomSource { return new SeededRandom(this.derive(1, tickId)); }
-  forPhysics(tickId: number): IRandomSource { return new SeededRandom(this.derive(2, tickId)); }
-  forEvents(tickId: number): IRandomSource { return new SeededRandom(this.derive(3, tickId)); }
+  forAI(tickId: number): IRandomSource { return new SeededRandom(this.derive(0, tickId)); }
+  forPhysics(tickId: number): IRandomSource { return new SeededRandom(this.derive(1, tickId)); }
+  forEvents(tickId: number): IRandomSource { return new SeededRandom(this.derive(2, tickId)); }
 }
 
 export const FIXTURE_SEED = 0xC0FFEE42;
