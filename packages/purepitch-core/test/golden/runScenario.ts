@@ -50,6 +50,7 @@ function cloneState(s: MatchState): MatchState {
       velocity: { ...s.ball.velocity },
       spin: { ...s.ball.spin },
       ownerId: s.ball.ownerId,
+      ...(s.ball.lastTouchId ? { lastTouchId: s.ball.lastTouchId } : {}),
       controlStrength: s.ball.controlStrength,
     },
     players: clonedPlayers,

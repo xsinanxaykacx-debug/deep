@@ -86,6 +86,7 @@ export function createFixtureState(): MatchState {
     velocity: { x: 0, y: 0, z: 0 },
     spin: { x: 0, y: 0, z: 0 },
     ownerId: 'home_9',
+    lastTouchId: null,
     controlStrength: 1,
   };
 

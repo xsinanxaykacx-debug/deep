@@ -113,6 +113,20 @@ export class PurePhysicsEngine implements IPhysicsEngine {
 
     const pickupRadius = this.config.playerRadius;
     const pickupRadiusSq = pickupRadius * pickupRadius;
+
+    // Pası/şutu atan oyuncu, top ayağından fiziksel olarak uzaklaşana kadar
+    // kendi bıraktığı topu aynı tick döngüsünde anında geri alamaz.
+    if (ball.lastTouchId) {
+      const lastToucher = next.players.get(ball.lastTouchId);
+      if (lastToucher) {
+        const dx = ball.position.x - lastToucher.position.x;
+        const dy = ball.position.y - lastToucher.position.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq <= pickupRadiusSq + 1e-9) return;
+      }
+      ball.lastTouchId = null;
+    }
+
     let bestId: string | null = null;
     let bestDistSq = Infinity;
 
@@ -139,6 +153,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     if (!picker) return;
 
     ball.ownerId = bestId;
+    ball.lastTouchId = null;
     ball.controlStrength = 1.0;
     ball.velocity = { x: picker.velocity.x, y: picker.velocity.y, z: 0 };
     ball.position.x = picker.position.x;
@@ -172,6 +187,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 1e-6) return;
 
+        next.ball.lastTouchId = ownerId;
         next.ball.velocity = {
           x: (dx / dist) * intent.passSpeed,
           y: (dy / dist) * intent.passSpeed,
@@ -186,6 +202,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
       case 'shoot':
         if (!Number.isFinite(intent.shootSpeed) || intent.shootSpeed < 0 ||
             !Number.isFinite(intent.shootDirection)) return;
+        next.ball.lastTouchId = ownerId;
         next.ball.velocity = {
           x: Math.cos(intent.shootDirection) * intent.shootSpeed,
           y: Math.sin(intent.shootDirection) * intent.shootSpeed,

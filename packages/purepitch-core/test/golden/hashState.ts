@@ -93,6 +93,8 @@ export function stateToBytes(state: MatchState): Uint8Array {
   pushF64(state.ball.spin.y);
   pushF64(state.ball.spin.z);
   pushStr(state.ball.ownerId ?? '');
+  // Eski baseline ile uyum için null/undefined alan byte dizisine eklenmez.
+  if (state.ball.lastTouchId) pushStr(state.ball.lastTouchId);
   pushF64(state.ball.controlStrength);
 
   // Oyuncular — playerOrder sırasıyla
@@ -175,6 +177,7 @@ export function diffState(a: MatchState, b: MatchState): StateDiff[] {
   push('ball.spin.y', a.ball.spin.y, b.ball.spin.y);
   push('ball.spin.z', a.ball.spin.z, b.ball.spin.z);
   push('ball.ownerId', a.ball.ownerId, b.ball.ownerId);
+  push('ball.lastTouchId', a.ball.lastTouchId ?? null, b.ball.lastTouchId ?? null);
   push('ball.controlStrength', a.ball.controlStrength, b.ball.controlStrength);
 
   for (const id of a.playerOrder) {

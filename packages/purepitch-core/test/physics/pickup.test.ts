@@ -61,6 +61,41 @@ describe('pickup — deterministik top kontrolü', () => {
     expect(next.ball.ownerId).toBe('home_1');
   });
 
+  it('pası atan oyuncu top ayağından uzaklaşmadan anında yeniden pickup yapamaz', () => {
+    const passer = makePlayer('home_1', 'home', { x: 0, y: 0 });
+    const ball = makeBall({
+      position: { x: 0.2, y: 0, z: 0.1 },
+      velocity: { x: 0, y: 0, z: 0 },
+      ownerId: null,
+      lastTouchId: 'home_1'
+    });
+    const current = makeEmptyState([passer], ball);
+    const next = makeEmptyState([passer], ball);
+
+    new PurePhysicsEngine().step(current, noIntents, next, DT, noRng);
+
+    expect(next.ball.ownerId).toBeNull();
+    expect(next.ball.lastTouchId).toBe('home_1');
+  });
+
+  it('top son dokunan oyuncudan pickup yarıçapının dışına çıkınca engel kalkar', () => {
+    const passer = makePlayer('home_1', 'home', { x: 0, y: 0 });
+    const receiver = makePlayer('home_2', 'home', { x: 1.2, y: 0 });
+    const ball = makeBall({
+      position: { x: 0.6, y: 0, z: 0.1 },
+      velocity: { x: 0, y: 0, z: 0 },
+      ownerId: null,
+      lastTouchId: 'home_1'
+    });
+    const current = makeEmptyState([passer, receiver], ball);
+    const next = makeEmptyState([passer, receiver], ball);
+
+    new PurePhysicsEngine().step(current, noIntents, next, DT, noRng);
+
+    expect(next.ball.lastTouchId).toBeNull();
+    expect(next.ball.ownerId).toBe('home_2');
+  });
+
   it('top zaten sahipliyse pickup başka oyuncuya geçirmez', () => {
     const owner = makePlayer('home_1', 'home', { x: 0, y: 0 });
     const challenger = makePlayer('away_1', 'away', { x: 0.8, y: 0 });

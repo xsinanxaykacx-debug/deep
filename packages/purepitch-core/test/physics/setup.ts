@@ -30,6 +30,7 @@ export function makeBall(overrides: Partial<BallState> = {}): BallState {
     velocity: { x: 0, y: 0, z: 0 },
     spin: { x: 0, y: 0, z: 0 },
     ownerId: null,
+    lastTouchId: null,
     controlStrength: 0,
     ...overrides
   };

@@ -35,6 +35,8 @@ export interface BallState {
   velocity: Vector3D;
   spin: Vector3D;
   ownerId: string | null;
+  /** Son pas/şut temasını yapan oyuncu; top ondan uzaklaşana kadar self-pickup engellenir. */
+  lastTouchId?: string | null;
   controlStrength: number;
 }
 
