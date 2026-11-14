@@ -35,8 +35,6 @@ jobs:
         run: npm ci
       - name: TypeScript build
         run: npm run build
-      - name: Regenerate golden master for P0e-2 verification
-        run: npm run golden:update && cat test/golden/golden-master.json
       - name: Golden determinism and regression tests
         run: npm run test:golden -- --reporter=verbose
       - name: Physics unit tests
