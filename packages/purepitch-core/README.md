@@ -13,7 +13,7 @@ This package is isolated from the FM27 root application and its root build confi
 Run these commands from this directory:
 
 ```bash
-npm install
+npm ci
 npm run build
 npm run test:golden
 ```
@@ -35,7 +35,7 @@ It does not validate energy or momentum conservation, acceleration curves,
 expected-goals calibration, or football decision quality. Those require separate
 physics and gameplay validation suites before a v5 engine can be considered sound.
 
-The initial determinism run may be executed before a golden master exists. The
+The initial determinism run may be executed before a golden master exists. The package runtime is pinned to Node.js 22.23.4, and dependency installation uses the committed npm lockfile. `npm audit --audit-level=high` is part of CI. The
 golden-master regression tests are skipped until
 `test/golden/golden-master.json` is committed. Generate that file explicitly
 with `npm run golden:update` only after two independent scenario runs match.
