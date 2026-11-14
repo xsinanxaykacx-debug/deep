@@ -1826,13 +1826,29 @@ function makeRegisteredSquad(teamId: string, roster: { name: string; position: P
     else if (pos === 'LW' || pos === 'RW') Object.assign(attrs, { pace: scale(15), dribbling: scale(15), crossing: scale(13), shooting: scale(13), technique: scale(14) });
     else Object.assign(attrs, { shooting: scale(15), heading: scale(14), positioning: scale(15), strength: scale(14) });
 
+    const attributes = baseAttrs(attrs);
+    // Aynı mevki şablonundaki oyuncuların kopya istatistiklere sahip olmasını
+    // önle: isim + takım + özellik anahtarı üzerinden sabit, tekrarlanabilir
+    // küçük farklar üret. Rastgele sayı kullanılmaz.
+    const playerKey = `${teamId}:${index}:${entry.name}`;
+    for (const key of Object.keys(attributes) as (keyof PlayerAttributes)[]) {
+      if (pos !== 'GK' && (key === 'goalkeeping' || key === 'reflexes')) continue;
+      let hash = 0;
+      const source = `${playerKey}:${key}`;
+      for (let i = 0; i < source.length; i++) {
+        hash = (hash * 31 + source.charCodeAt(i)) >>> 0;
+      }
+      const variation = (hash % 5) - 2;
+      attributes[key] = Math.max(1, Math.min(20, attributes[key] + variation));
+    }
+
     return {
       id: `${teamId}_real_${index + 1}`,
       name: entry.name,
       position: pos,
       condition: 90,
       morale: 75,
-      attributes: baseAttrs(attrs),
+      attributes,
     };
   });
 }
