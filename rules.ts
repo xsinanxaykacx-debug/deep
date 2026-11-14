@@ -271,19 +271,23 @@ export function resolveShot(
   );
 
   const isGoal = goalkeeperError || (onTarget && chance(goalProbability));
+  const deflectedForCorner = !isGoal && !onTarget && defensivePressure > 0.45 &&
+    chance(0.06 + defensivePressure * 0.12);
 
-  let text: string;
+  let text;
   if (isGoal) text = `GOL! ${carrier.name} (Zone ${zone})`;
   else if (hitPost) text = `Direkten döndü: ${carrier.name}`;
   else if (goalkeeperError) text = 'Kaleci hatası!';
   else if (onTarget) text = `Kaleci kurtardı: ${carrier.name}`;
+  else if (deflectedForCorner) text = `Savunmaya çarpan şut, korner: ${carrier.name}`;
   else text = `Şut auta gitti: ${carrier.name}`;
 
   return {
     success: isGoal,
-    nextZone: 4 as PitchZone,
-    possessionChange: true,
+    nextZone: deflectedForCorner ? 10 as PitchZone : 4 as PitchZone,
+    possessionChange: !deflectedForCorner,
     goal: isGoal,
+    isCorner: deflectedForCorner,
     isShot: true,
     onTarget: onTarget || goalkeeperError,
     saved: !isGoal && onTarget,
