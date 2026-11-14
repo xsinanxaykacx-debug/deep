@@ -84,11 +84,33 @@ export interface ISpatialAnalyzer {
   calculatePitchControl(state: DeepReadonly<MatchState>, resolution: number): GridControlMatrix;
 }
 
-export interface PlayerIntent {
-  readonly targetVelocity: Vector2D;
-  readonly sprint: boolean;
-  readonly actionType: 'move' | 'pass' | 'shoot' | 'tackle';
-}
+export type PlayerIntent =
+  | {
+      readonly kind: 'move';
+      readonly targetVelocity: Vector2D;
+      readonly sprint: boolean;
+    }
+  | {
+      readonly kind: 'pass';
+      readonly targetVelocity: Vector2D;
+      readonly sprint: boolean;
+      readonly passTargetId: string;
+      readonly passSpeed: number;
+    }
+  | {
+      readonly kind: 'shoot';
+      readonly targetVelocity: Vector2D;
+      readonly sprint: boolean;
+      readonly shootSpeed: number;
+      readonly shootDirection: number;
+      readonly shootSpin: Vector3D;
+    }
+  | {
+      readonly kind: 'tackle';
+      readonly targetVelocity: Vector2D;
+      readonly sprint: boolean;
+      readonly tackleTargetId: string;
+    };
 
 export interface IUtilityAI {
   decide(

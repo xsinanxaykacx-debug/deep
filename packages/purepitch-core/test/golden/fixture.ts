@@ -85,16 +85,21 @@ export function createFixtureState(): MatchState {
     position: { x: 0, y: 0, z: 0.11 },
     velocity: { x: 0, y: 0, z: 0 },
     spin: { x: 0, y: 0, z: 0 },
-    ownerId: null,
-    controlStrength: 0,
+    ownerId: 'home_9',
+    controlStrength: 1,
   };
+
+  // Başlangıç sahipliği ile oyuncu/top konumu tutarlı olsun.
+  const initialOwner = players.get('home_9')!;
+  initialOwner.position = { x: 0, y: 0 };
+  initialOwner.facing = 0;
 
   return { tickId: 0, ball, players, playerOrder };
 }
 
 /**
  * Deterministik intent üretici.
- * v4 actionType'ı işlemediği için sadece 'move' üretiyoruz.
+ * Temel hareket intent'leri üretir; scripted aksiyonlar ayrı katmanda eklenir.
  * RNG seed sabit → aynı tick dizisinde aynı intent.
  */
 export function createDeterministicIntents(
@@ -102,7 +107,7 @@ export function createDeterministicIntents(
   tick: number,
   rng: IRandomSource,
 ): Map<string, PlayerIntent> {
-  void tick; // şimdilik kullanılmıyor, v5'te davranış değişimi için lazım olacak
+  void tick;
   const intents = new Map<string, PlayerIntent>();
   for (const id of state.playerOrder) {
     const p = state.players.get(id)!;
@@ -117,8 +122,29 @@ export function createDeterministicIntents(
         ? { x: (dx / dist) * speed + jx, y: (dy / dist) * speed + jy }
         : { x: 0, y: 0 },
       sprint: rng.next() > 0.7,
-      actionType: 'move',
+      kind: 'move',
     });
   }
+  return intents;
+}
+
+/** Golden senaryosu için sabit aksiyon katmanı: tick 10'da home_9 pas verir. */
+export function createScriptedIntents(
+  state: MatchState,
+  tick: number,
+  rng: IRandomSource,
+): Map<string, PlayerIntent> {
+  const intents = createDeterministicIntents(state, tick, rng);
+
+  if (tick === 10 && state.ball.ownerId === 'home_9') {
+    intents.set('home_9', {
+      kind: 'pass',
+      targetVelocity: { x: 0, y: 0 },
+      sprint: false,
+      passTargetId: 'home_10',
+      passSpeed: 15,
+    });
+  }
+
   return intents;
 }

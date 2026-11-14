@@ -4,7 +4,7 @@ import type { MatchState, IRandomSource, PlayerState } from '../../src/purepitch
 import { PurePhysicsEngine, type PhysicsConfig } from '../../src/PurePhysicsEngine.js';
 import {
   createFixtureState,
-  createDeterministicIntents,
+  createScriptedIntents,
   SeededRandom,
   FIXTURE_SEED,
   INTENT_SEED,
@@ -76,7 +76,7 @@ export function runScenario(config: ScenarioConfig): ScenarioResult {
   const intentRng: IRandomSource = new SeededRandom(intentSeed);
 
   for (let t = 0; t < ticks; t++) {
-    const intents = createDeterministicIntents(current, t, intentRng);
+    const intents = createScriptedIntents(current, t, intentRng);
     // Her tick'te fizik motoru için taze RNG — v4 kullanmıyor ama sözleşme gereği.
     const physicsRng: IRandomSource = new SeededRandom((physicsSeed ^ (t * 0x9E3779B1)) >>> 0);
 

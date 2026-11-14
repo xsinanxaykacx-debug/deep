@@ -1,7 +1,5 @@
-// PurePitch Engine v4 — mevcut konuşma kaynağının baseline kopyası.
-// Golden test bu sürümün davranışını sabitlemek için kullanılacaktır.
-// Bilinen kusurlar (readonly cast, any, fizik kalibrasyonu, actionType'in
-// uygulanmaması ve rng'nin kullanılmaması) bu baseline'da kasıtlı olarak korunur.
+// PurePitch Engine v5 — deterministik oyuncu aksiyonlarını fiziksel olarak uygular.
+// AI karar vermez; motor yalnızca PlayerIntent içindeki açık aksiyonu yürütür.
 
 import {
   MatchState, PlayerIntent, IRandomSource, IPhysicsEngine, BallState
@@ -42,9 +40,9 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     for (const id of current.playerOrder) {
       const srcPlayer = current.players.get(id)!;
       const intent = intents.get(id) || {
+        kind: 'move' as const,
         targetVelocity: { x: 0, y: 0 },
-        sprint: false,
-        actionType: 'move' as const
+        sprint: false
       };
 
       const targetVel = intent.targetVelocity;
@@ -96,8 +94,105 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     // 2. ADIM: Sıralı silindirik çarpışma ve impulse
     this.resolveCylindricalCollisions(next);
 
-    // 3. ADIM: Top fiziği
+    // 3. ADIM: Top fiziği — mevcut sahibin ayağına yerleştirir.
     this.updateBallPhysics(current.ball, next, dt, rng);
+
+    // 4. ADIM: Top sahibine karşı gelen deterministik tackle'lar.
+    this.resolveTackles(current, intents, next);
+
+    // 5. ADIM: Tackle sonrası hâlâ top sahibi olan oyuncunun pası/şutu.
+    this.processOwnerAction(intents, next);
+  }
+
+  private processOwnerAction(
+    intents: ReadonlyMap<string, PlayerIntent>,
+    next: MatchState
+  ): void {
+    const ownerId = next.ball.ownerId;
+    if (!ownerId) return;
+
+    const intent = intents.get(ownerId);
+    if (!intent) return;
+
+    switch (intent.kind) {
+      case 'move':
+      case 'tackle':
+        return;
+
+      case 'pass': {
+        const owner = next.players.get(ownerId);
+        const target = next.players.get(intent.passTargetId);
+        if (!owner || !target || !Number.isFinite(intent.passSpeed) || intent.passSpeed < 0) return;
+
+        const dx = target.position.x - owner.position.x;
+        const dy = target.position.y - owner.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1e-6) return;
+
+        next.ball.velocity = {
+          x: (dx / dist) * intent.passSpeed,
+          y: (dy / dist) * intent.passSpeed,
+          z: 0
+        };
+        next.ball.ownerId = null;
+        next.ball.controlStrength = 0;
+        next.ball.spin = { x: 0, y: 0, z: 0 };
+        return;
+      }
+
+      case 'shoot':
+        if (!Number.isFinite(intent.shootSpeed) || intent.shootSpeed < 0 ||
+            !Number.isFinite(intent.shootDirection)) return;
+        next.ball.velocity = {
+          x: Math.cos(intent.shootDirection) * intent.shootSpeed,
+          y: Math.sin(intent.shootDirection) * intent.shootSpeed,
+          z: 0
+        };
+        next.ball.spin = { ...intent.shootSpin };
+        next.ball.ownerId = null;
+        next.ball.controlStrength = 0;
+        return;
+    }
+  }
+
+  private resolveTackles(
+    current: Readonly<MatchState>,
+    intents: ReadonlyMap<string, PlayerIntent>,
+    next: MatchState
+  ): void {
+    const ownerId = current.ball.ownerId;
+    if (!ownerId) return;
+
+    const owner = next.players.get(ownerId);
+    if (!owner) return;
+
+    const range = this.config.playerRadius * 2;
+    const rangeSq = range * range;
+
+    // playerOrder sırası deterministik tie-break kuralıdır.
+    for (const id of current.playerOrder) {
+      if (id === ownerId) continue;
+
+      const intent = intents.get(id);
+      if (!intent || intent.kind !== 'tackle' || intent.tackleTargetId !== ownerId) continue;
+
+      const tackler = next.players.get(id);
+      if (!tackler || tackler.teamId === owner.teamId) continue;
+
+      const dx = owner.position.x - tackler.position.x;
+      const dy = owner.position.y - tackler.position.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq > rangeSq) continue;
+
+      next.ball.ownerId = id;
+      next.ball.controlStrength = 1;
+      next.ball.velocity = { x: tackler.velocity.x, y: tackler.velocity.y, z: 0 };
+      next.ball.position.x = tackler.position.x + Math.cos(tackler.facing) * this.config.ballOffset;
+      next.ball.position.y = tackler.position.y + Math.sin(tackler.facing) * this.config.ballOffset;
+      next.ball.position.z = 0.1;
+      next.ball.spin = { x: 0, y: 0, z: 0 };
+      return;
+    }
   }
 
   private resolveCylindricalCollisions(next: MatchState): void {

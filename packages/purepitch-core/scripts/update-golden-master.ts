@@ -21,9 +21,9 @@ writeFileSync(
   outPath,
   JSON.stringify(
     {
-      _comment: 'PurePitch Engine v4 golden master — determinizm referansı. Fizik doğruluğu iddiası değildir.',
+      _comment: 'PurePitch Engine v5-P0d-1 golden master — deterministik aksiyonlar dahil. Fizik doğruluğu iddiası değildir.',
       _generatedAt: new Date().toISOString(),
-      _engine: 'PurePhysicsEngine v4',
+      _engine: 'PurePhysicsEngine v5-P0d-1',
       _note: 'v5\'te bilinçli davranış değişikliği olursa bu dosya yenilenir.',
       scenario: SCENARIO,
       tickCount: SCENARIO.ticks,
@@ -39,3 +39,6 @@ console.log(`Tick sayısı: ${SCENARIO.ticks}`);
 console.log(`Hash sayısı: ${result.hashes.length} (beklenen: ${SCENARIO.ticks + 1})`);
 console.log(`Başlangıç hash: ${result.hashes[0]}`);
 console.log(`Son hash:      ${result.hashes[result.hashes.length - 1]}`);
+console.log('GOLDEN_HASHES_BEGIN');
+console.log(JSON.stringify(result.hashes));
+console.log('GOLDEN_HASHES_END');
