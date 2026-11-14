@@ -80,7 +80,7 @@ describe('pickup — deterministik top kontrolü', () => {
 
   it('top son dokunan oyuncudan pickup yarıçapının dışına çıkınca engel kalkar', () => {
     const passer = makePlayer('home_1', 'home', { x: 0, y: 0 });
-    const receiver = makePlayer('home_2', 'home', { x: 1.2, y: 0 });
+    const receiver = makePlayer('home_2', 'home', { x: 0.9, y: 0 });
     const ball = makeBall({
       position: { x: 0.6, y: 0, z: 0.1 },
       velocity: { x: 0, y: 0, z: 0 },
