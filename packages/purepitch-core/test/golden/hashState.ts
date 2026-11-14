@@ -8,7 +8,7 @@
 // Çapraz platform bit düzeyinde eşitlik GARANTİ EDİLMEZ (Math.atan2, Math.sin
 // implementasyonları farklı olabilir).
 
-import type { MatchState } from '../../src/purepitch_v3.js';
+import type { MatchState, PlayerAttributes } from '../../src/purepitch_v3.js';
 
 const FNV_OFFSET_BASIS_LO = 0x84222325;
 const FNV_OFFSET_BASIS_HI = 0xcbf29ce4;
@@ -119,6 +119,8 @@ export function stateToBytes(state: MatchState): Uint8Array {
     pushF64(p.attributes.staminaMax);
     pushF64(p.attributes.passingSkill);
     pushF64(p.attributes.shootingSkill);
+    // Fixture v4 baseline'ında strength tipte tanımlı değil; varsa hash'e dahil et.
+    pushF64((p.attributes as PlayerAttributes & { strength?: number }).strength ?? 0);
     pushF64(p.roleAnchor.x);
     pushF64(p.roleAnchor.y);
   }
@@ -187,12 +189,23 @@ export function diffState(a: MatchState, b: MatchState): StateDiff[] {
       });
       continue;
     }
+    push(`player[${id}].id`, pa.id, pb.id);
+    push(`player[${id}].teamId`, pa.teamId, pb.teamId);
     push(`player[${id}].pos.x`, pa.position.x, pb.position.x);
     push(`player[${id}].pos.y`, pa.position.y, pb.position.y);
     push(`player[${id}].vel.x`, pa.velocity.x, pb.velocity.x);
     push(`player[${id}].vel.y`, pa.velocity.y, pb.velocity.y);
     push(`player[${id}].stamina`, pa.stamina, pb.stamina);
     push(`player[${id}].facing`, (pa as { facing?: number }).facing ?? 0, (pb as { facing?: number }).facing ?? 0);
+    push(`player[${id}].attributes.maxSpeed`, pa.attributes.maxSpeed, pb.attributes.maxSpeed);
+    push(`player[${id}].attributes.acceleration`, pa.attributes.acceleration, pb.attributes.acceleration);
+    push(`player[${id}].attributes.agility`, pa.attributes.agility, pb.attributes.agility);
+    push(`player[${id}].attributes.staminaMax`, pa.attributes.staminaMax, pb.attributes.staminaMax);
+    push(`player[${id}].attributes.passingSkill`, pa.attributes.passingSkill, pb.attributes.passingSkill);
+    push(`player[${id}].attributes.shootingSkill`, pa.attributes.shootingSkill, pb.attributes.shootingSkill);
+    push(`player[${id}].attributes.strength`, (pa.attributes as PlayerAttributes & { strength?: number }).strength ?? 0, (pb.attributes as PlayerAttributes & { strength?: number }).strength ?? 0);
+    push(`player[${id}].roleAnchor.x`, pa.roleAnchor.x, pb.roleAnchor.x);
+    push(`player[${id}].roleAnchor.y`, pa.roleAnchor.y, pb.roleAnchor.y);
   }
 
   return diffs;
