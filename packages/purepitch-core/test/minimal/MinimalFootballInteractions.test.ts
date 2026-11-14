@@ -110,17 +110,29 @@ describe('minimal football interaction model', () => {
     expect(central.saveProbability).toBeGreaterThanOrEqual(wide.saveProbability);
   });
 
-  it('only requests a decision when a caller reports a game-state trigger', () => {
-    const nearGoal = decideAttackerAction({
+  it('makes contextually better decisions more likely without fixing an outcome', () => {
+    const nearGoalShots = Array.from({ length: 256 }, (_, seed) =>
+      decideAttackerAction({
+        player: attacker, distanceToGoal: 7, defenderDistance: 3,
+        shootingLaneOpen: true, trigger: 'lane-opened', random: new SeededRandom(seed + 100),
+      }) === 'shoot',
+    ).filter(Boolean).length;
+    const pressuredShots = Array.from({ length: 256 }, (_, seed) =>
+      decideAttackerAction({
+        player: attacker, distanceToGoal: 25, defenderDistance: 0.7,
+        shootingLaneOpen: false, trigger: 'pressure-changed', random: new SeededRandom(seed + 100),
+      }) === 'shoot',
+    ).filter(Boolean).length;
+    const repeated = decideAttackerAction({
       player: attacker, distanceToGoal: 7, defenderDistance: 3,
       shootingLaneOpen: true, trigger: 'lane-opened', random: new SeededRandom(88),
     });
-    const underPressure = decideAttackerAction({
-      player: attacker, distanceToGoal: 25, defenderDistance: 0.7,
-      shootingLaneOpen: false, trigger: 'pressure-changed', random: new SeededRandom(88),
-    });
-    expect(['shoot', 'dribble']).toContain(nearGoal);
-    expect(['shoot', 'dribble']).toContain(underPressure);
-    expect(nearGoal).not.toBe(underPressure);
+    expect(nearGoalShots).toBeGreaterThan(pressuredShots);
+    expect(repeated).toBe(decideAttackerAction({
+      player: attacker, distanceToGoal: 7, defenderDistance: 3,
+      shootingLaneOpen: true, trigger: 'lane-opened', random: new SeededRandom(88),
+    }));
+    expect(nearGoalShots).toBeLessThan(256);
+    expect(pressuredShots).toBeGreaterThan(0);
   });
 });
