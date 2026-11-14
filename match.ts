@@ -180,7 +180,7 @@ function applySubstitution(
   const candidates = lineup
     .filter(item => item.player.position !== 'GK' &&
       !sentOff.has(item.player.id) &&
-      item.player.condition < (minute >= 75 ? 87 : 90))
+      item.player.condition < (minute >= 75 ? 85 : 88))
     .sort((a, b) => a.player.condition - b.player.condition);
 
   if (candidates.length === 0) return;
@@ -328,7 +328,7 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     const pressure = pressureLevel(st.zone, activeDef, defendingTeam.tactics);
 
     // Ev sahibi avantajı küçük bir karar/rahatlık etkisi; doğrudan gol bonusu değil.
-    const homeComfort = isHome ? 0.025 : 0;
+    const homeComfort = isHome ? 0.07 : 0;
     const action = chooseContextualAction(
       carrier, st.zone, Math.max(0, pressure - homeComfort),
       attackingTeam.tactics, attackCount
@@ -368,8 +368,8 @@ export function simulateMatch(home: Team, away: Team): MatchState {
       const throughBall = target > st.zone && target - st.zone >= 2;
       const defensiveDepth = clamp(defendingTeam.tactics.depth, 0, 100);
       const offsideChance = attackingThird && throughBall
-        ? clamp(0.025 + defensiveDepth * 0.00065 -
-          skill(carrier, 'decisions') * 0.001, 0.015, 0.09)
+        ? clamp(0.012 + defensiveDepth * 0.0004 -
+          skill(carrier, 'decisions') * 0.0004, 0.008, 0.06)
         : 0;
       if (offsideChance > 0 && chance(offsideChance)) {
         result = {
@@ -383,7 +383,9 @@ export function simulateMatch(home: Team, away: Team): MatchState {
         if (result.success) {
           if (isHome) stats.homePassesCompleted++; else stats.awayPassesCompleted++;
         } else if (!result.isFoul) {
-          if (isHome) stats.awayTackles++; else stats.homeTackles++;
+          if (chance(0.35)) {
+            if (isHome) stats.awayTackles++; else stats.homeTackles++;
+          }
         }
       }
     }
