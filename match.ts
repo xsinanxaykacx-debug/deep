@@ -46,6 +46,8 @@ export interface MatchState {
   minute: number;
   zone: PitchZone;
   possession: Side;
+  homeScore: number;
+  awayScore: number;
   stats: MatchStats;
   events: string[];
 }
@@ -252,7 +254,7 @@ export function simulateMatch(home: Team, away: Team): MatchState {
   };
 
   const st: MatchState = {
-    minute: 0, zone: 4, possession: 'home', stats, events: []
+    minute: 0, zone: 4, possession: 'home', homeScore: 0, awayScore: 0, stats, events: []
   };
 
   const sentOffHome = new Set<string>();
@@ -336,7 +338,8 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     if (action === 'shot') {
       result = resolveShot(carrier, st.zone, activeDef, pressure);
       if (result.goal) {
-        if (isHome) stats.homeScore++; else stats.awayScore++;
+        if (isHome) { stats.homeScore++; st.homeScore++; }
+        else { stats.awayScore++; st.awayScore++; }
         st.events.push(`${minute}' ${result.text}`);
       }
     } else if (action === 'cross') {
