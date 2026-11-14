@@ -146,8 +146,6 @@ export function buildFormationSlots(
     { position: 'GK', primaryZone: 1 as PitchZone }
   ];
 
-  let currentRow = -1;
-
   for (const lineSpec of spec.lines) {
     if (lineSpec.lanes.length !== lineSpec.positions.length) {
       throw new Error(
@@ -163,14 +161,9 @@ export function buildFormationSlots(
       );
     }
 
-    // Aynı hat birden fazla kez kullanılıyorsa derinlik sırasını koru.
-    // Saha 4 yatay bölgeye sahip olduğu için son hat 3'te sabitlenir.
-    const row = Math.min(
-      Math.max(baseRow, currentRow + 1),
-      3
-    );
-
-    currentRow = row;
+    // Aynı saha hattındaki gruplar aynı derinlikte kalır.
+    // Örn. 4-1-2-1-2 dizilişindeki iki orta saha grubu ayrılmaz.
+    const row = baseRow;
 
     for (let i = 0; i < lineSpec.positions.length; i++) {
       const lane = lineSpec.lanes[i];
@@ -307,10 +300,39 @@ export function slotZoneWeight(
   const roleWeights = POSITION_ZONE_WEIGHTS[slot.position];
 
   if (roleWeights) {
-    return roleWeights[zone] ?? 0;
+    return (roleWeights[zone] ?? 0) * roleFitMultiplier(player, slot.position);
   }
 
   return zoneWeight(player, zone);
+}
+
+/** Doğal mevki ile verilen rol arasındaki uyum katsayısı. */
+export function roleFitMultiplier(player: Player, role: Position): number {
+  if (player.position === role) return 1;
+  if (player.altPositions?.includes(role)) return 0.95;
+  if (player.position === 'GK' || role === 'GK') return 0;
+
+  const groups: Record<Position, string> = {
+    GK: 'GK', RB: 'FB', LB: 'FB', CB: 'CB',
+    DM: 'MID', CM: 'MID', AM: 'AM',
+    RW: 'WING', LW: 'WING', ST: 'ST'
+  };
+  const natural = groups[player.position];
+  const assigned = groups[role];
+
+  if (natural === assigned) return 0.82;
+  if (
+    (natural === 'FB' && assigned === 'CB') ||
+    (natural === 'CB' && assigned === 'FB') ||
+    (natural === 'MID' && assigned === 'AM') ||
+    (natural === 'AM' && assigned === 'MID') ||
+    (natural === 'WING' && assigned === 'AM') ||
+    (natural === 'AM' && assigned === 'WING') ||
+    (natural === 'ST' && assigned === 'AM') ||
+    (natural === 'AM' && assigned === 'ST')
+  ) return 0.65;
+
+  return 0.45;
 }
 
 export function resolveLineup(

@@ -82,8 +82,8 @@ export function predictMatch(
 
   for (let i = 0; i < sims; i++) {
     const result = simulateMatch(H, A);
-    const homeScore = result.homeScore;
-    const awayScore = result.awayScore;
+    const homeScore = result.stats.homeScore;
+    const awayScore = result.stats.awayScore;
 
     if (
       !Number.isFinite(homeScore) ||

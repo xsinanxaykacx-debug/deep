@@ -5,10 +5,10 @@ import type { PitchZone } from './pitch';
 import { PITCH_ZONES, ZONE_NEIGHBORS } from './pitch';
 
 import type { Player, PlayerAttributes } from './player';
-import { pickBallCarrier } from './core';
-import type { FormationSlot } from './core';
+import { slotZoneWeight } from './core';
+import type { FormationSlot, TeamTactics } from './core';
 
-import { roll, pick, chance } from './chance';
+import { roll, pick, chance, rand } from './chance';
 
 export type ActionType = 'pass' | 'shot' | 'dribble' | 'cross';
 
@@ -29,6 +29,7 @@ export interface ActionResult {
 
   // Faulü yapan gerçek savunmacı.
   foulPlayerId?: string;
+  isShot?: boolean;
 
   text: string;
 }
@@ -43,9 +44,14 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function safePick<T>(items: T[]): T | undefined {
-  if (items.length === 0) return undefined;
-  return pick(items);
+function pressingLevel(tactics?: TeamTactics): number {
+  const base = tactics?.pressing ?? 50;
+  const styleBonus = tactics?.style === 'high_press'
+    ? 12
+    : tactics?.style === 'low_block'
+      ? -10
+      : 0;
+  return clamp(base + styleBonus, 0, 100);
 }
 
 function getForwardZone(zone: PitchZone): PitchZone {
@@ -72,21 +78,56 @@ export function skill(
 
 export function findDefender(
   target: PitchZone,
-  oppLineup: LineupEntry[]
+  oppLineup: LineupEntry[],
+  tactics?: TeamTactics
 ): Player | null {
   if (oppLineup.length === 0) return null;
 
-  const mirror = PITCH_ZONES[target]?.mirrorZone;
+  // Hücum bölgesini savunma takımının kendi yönüne bir kez çevir.
+  const defendZone = PITCH_ZONES[target].mirrorZone;
+  const targetInfo = PITCH_ZONES[defendZone];
+  const depth = clamp(tactics?.depth ?? 50, 0, 100);
+  const width = clamp(tactics?.width ?? 50, 0, 100);
+  const pressing = pressingLevel(tactics);
+  const styleDepth = tactics?.style === 'high_press' ? 0.20 : tactics?.style === 'low_block' ? -0.20 : 0;
+  const desiredRow = clamp(
+    Math.floor(targetInfo.id / 3) + (depth - 50) / 100 + styleDepth,
+    0,
+    3
+  );
 
-  if (mirror !== undefined) {
-    const defender =
-      pickBallCarrier(mirror, oppLineup) ??
-      pickBallCarrier(target, oppLineup);
+  const ranked = oppLineup
+    .filter(item => item.slot.position !== 'GK' && item.player.position !== 'GK')
+    .map(item => {
+      const info = PITCH_ZONES[item.slot.primaryZone];
+      const rowDistance = Math.abs(Math.floor(info.id / 3) - desiredRow);
+      const laneDistance = Math.abs(
+        ['right', 'center', 'left'].indexOf(info.lane) -
+        ['right', 'center', 'left'].indexOf(targetInfo.lane)
+      );
+      const lateralPenalty = laneDistance * (1.25 - width / 200);
+      const spatial = 1 / (1 + rowDistance + lateralPenalty);
+      const zoneFit = slotZoneWeight(item.player, item.slot, defendZone);
+      const defensiveSkill =
+        skill(item.player, 'tackling') * 0.30 +
+        skill(item.player, 'marking') * 0.30 +
+        skill(item.player, 'positioning') * 0.25 +
+        skill(item.player, 'strength') * 0.15;
+      const pressFactor = 0.85 + pressing / 100 * 0.30;
+      const score = (defensiveSkill * 0.65 + zoneFit * 7) * spatial * pressFactor;
+      return { player: item.player, score };
+    })
+    .sort((a, b) => b.score - a.score);
 
-    if (defender) return defender;
+  if (ranked.length === 0) return null;
+  const candidates = ranked.slice(0, Math.min(3, ranked.length));
+  const total = candidates.reduce((sum, item) => sum + Math.max(0.1, item.score), 0);
+  let ticket = rand() * total;
+  for (const item of candidates) {
+    ticket -= Math.max(0.1, item.score);
+    if (ticket <= 0) return item.player;
   }
-
-  return safePick(oppLineup)?.player ?? null;
+  return candidates[0].player;
 }
 
 // --------------------------------------------------
@@ -159,18 +200,27 @@ function createFoulResult(
 export function resolvePass(
   carrier: Player,
   target: PitchZone,
-  oppLineup: LineupEntry[]
+  oppLineup: LineupEntry[],
+  defensiveTactics?: TeamTactics,
+  sourceZone?: PitchZone
 ): ActionResult {
-  const defender = findDefender(target, oppLineup);
+  const defender = findDefender(target, oppLineup, defensiveTactics);
 
-  const passValue = skill(carrier, 'passing');
+  const longPass = Math.abs(target - (sourceZone ?? target)) >= 3;
+  const passValue = longPass
+    ? skill(carrier, 'passing') * 0.45 + skill(carrier, 'longPassing') * 0.55 - 0.6
+    : skill(carrier, 'passing');
 
   // Kontrollü kaos: düşük ihtimalle pas kalitesi düşer.
   const chaosFactor = chance(0.05) ? -5 : 0;
 
   const defenderValue = defender
-    ? skill(defender, 'tackling') * 0.35
-    : 4;
+    ? (
+        skill(defender, 'tackling') * 0.45 +
+        skill(defender, 'marking') * 0.30 +
+        skill(defender, 'positioning') * 0.25
+      ) * (0.85 + pressingLevel(defensiveTactics) / 100 * 0.30)
+    : 5;
 
   const success = roll(
     passValue + chaosFactor,
@@ -234,19 +284,20 @@ export function resolveShot(
   const hitPost = chance(0.03);
 
   const onTarget =
-    !hitPost && roll(shotPower, 8, 0.10);
+    !hitPost && roll(shotPower, goalkeeperValue * 0.72, 0.12);
 
-  const goalkeeperError = chance(0.02);
+  const goalkeeperError = !hitPost && onTarget && chance(0.015);
 
   const goalProbability = clamp(
-    (shotPower / Math.max(1, goalkeeperValue * 1.5)) * 0.45,
-    0.10,
-    0.50
+    (shotPower / Math.max(1, goalkeeperValue * 1.35)) * 0.34,
+    0.035,
+    0.42
   );
 
+  // Direğe çarpan top ve kalecinin kontrol ettiği şut gol olamaz.
   const isGoal =
-    (onTarget || goalkeeperError) &&
-    chance(goalProbability);
+    !hitPost && onTarget &&
+    (goalkeeperError || chance(goalProbability));
 
   let text: string;
 
@@ -278,14 +329,19 @@ export function resolveShot(
 export function resolveDribble(
   carrier: Player,
   zone: PitchZone,
-  oppLineup: LineupEntry[]
+  oppLineup: LineupEntry[],
+  defensiveTactics?: TeamTactics
 ): ActionResult {
-  const defender = findDefender(zone, oppLineup);
+  const defender = findDefender(zone, oppLineup, defensiveTactics);
 
   const dribbleValue = skill(carrier, 'dribbling');
 
   const defenderValue = defender
-    ? skill(defender, 'marking')
+    ? (
+        skill(defender, 'marking') * 0.45 +
+        skill(defender, 'tackling') * 0.35 +
+        skill(defender, 'positioning') * 0.20
+      ) * (0.85 + clamp(defensiveTactics?.pressing ?? 50, 0, 100) / 100 * 0.30)
     : 5;
 
   const success = roll(
@@ -330,7 +386,8 @@ export function resolveCross(
   carrier: Player,
   zone: PitchZone,
   oppLineup: LineupEntry[],
-  attackingLineup: LineupEntry[] = []
+  attackingLineup: LineupEntry[] = [],
+  defensiveTactics?: TeamTactics
 ): ActionResult {
   // Hücum oyuncusu rakip kadrodan değil kendi kadrosundan seçilir.
   const availableAttackers = attackingLineup.filter(
@@ -349,10 +406,9 @@ export function resolveCross(
       )[0] ??
     carrier;
 
-  const defender = findDefender(
-    10 as PitchZone,
-    oppLineup
-  );
+  const targetZone = (zone === 9 ? 9 : zone === 11 ? 11 : 10) as PitchZone;
+  const defender = findDefender(targetZone, oppLineup, defensiveTactics);
+  const goalkeeper = oppLineup.find(item => item.player.position === 'GK')?.player;
 
   const crossValue = skill(carrier, 'crossing');
 
@@ -360,7 +416,7 @@ export function resolveCross(
     ? (
         skill(defender, 'heading') * 0.5 +
         skill(defender, 'strength') * 0.5
-      )
+      ) * (0.90 + pressingLevel(defensiveTactics) / 500)
     : 5;
 
   // Korner.
@@ -405,30 +461,40 @@ export function resolveCross(
       0.1
     );
 
+    const goalkeeperValue = goalkeeper
+      ? skill(goalkeeper, 'goalkeeping') * 0.65 + skill(goalkeeper, 'reflexes') * 0.35
+      : 8;
+    const headerGoalChance = clamp(
+      0.30 + (headerPower - goalkeeperValue) * 0.012,
+      0.10,
+      0.40
+    );
     const isGoal =
-      headerSuccess && chance(0.45);
+      headerSuccess && chance(headerGoalChance);
 
     if (isGoal) {
       return {
         success: true,
-        nextZone: 10 as PitchZone,
+        nextZone: 4 as PitchZone,
         possessionChange: true,
         goal: true,
+        isShot: true,
         text: `KAFA GOLÜ! ${striker.name} (Orta: ${carrier.name})`
       };
     }
 
     return {
       success: true,
-      nextZone: 10 as PitchZone,
-      possessionChange: false,
+      nextZone: targetZone,
+      possessionChange: true,
+      isShot: true,
       text: `${carrier.name} orta yaptı, kafa vuruşu sonuçsuz kaldı.`
     };
   }
 
   return {
     success: false,
-    nextZone: 10 as PitchZone,
+    nextZone: targetZone,
     possessionChange: true,
     text: `${carrier.name}'in ortası kesildi`
   };
@@ -440,17 +506,23 @@ export function resolveCross(
 
 export function chooseAction(
   carrier: Player,
-  zone: PitchZone
+  zone: PitchZone,
+  tactics?: TeamTactics
 ): ActionType {
+  const style = tactics?.style ?? 'balanced';
+  const width = clamp(tactics?.width ?? 50, 0, 100);
+  const tempo = clamp(tactics?.tempo ?? 50, 0, 100);
+  const shotBias = style === 'direct' ? 0.08 : style === 'possession' ? -0.05 : 0;
+
   // Ceza sahasında şut önceliği.
-  if (zone === 10 && chance(0.60)) {
+  if (zone === 10 && chance(clamp(0.58 + shotBias + (tempo - 50) / 500, 0.35, 0.78))) {
     return 'shot';
   }
 
   // Kanatlarda orta.
   if (
     (zone === 9 || zone === 11) &&
-    chance(0.35)
+    chance(clamp(0.18 + width / 250 + (style === 'wing_play' ? 0.16 : 0), 0.12, 0.62))
   ) {
     return 'cross';
   }
@@ -459,7 +531,7 @@ export function chooseAction(
   if (
     zone >= 6 &&
     zone <= 8 &&
-    chance(0.10)
+    chance(clamp(0.08 + shotBias, 0.03, 0.20))
   ) {
     return 'shot';
   }
@@ -467,7 +539,7 @@ export function chooseAction(
   // İyi çalım yeteneğine sahip oyuncular.
   if (
     skill(carrier, 'dribbling') > 14 &&
-    chance(0.15)
+    chance(clamp(0.10 + (tempo - 50) / 500, 0.04, 0.22))
   ) {
     return 'dribble';
   }
@@ -482,8 +554,12 @@ export function chooseAction(
 export function choosePassTarget(
   zone: PitchZone,
   carrier: Player,
-  style: string
+  tacticsOrStyle: TeamTactics | string,
+  passingRangeOverride = 55
 ): PitchZone {
+  const tactics = typeof tacticsOrStyle === 'string' ? undefined : tacticsOrStyle;
+  const style = typeof tacticsOrStyle === 'string' ? tacticsOrStyle : tacticsOrStyle.style;
+  const passingRange = clamp(tactics?.passingRange ?? passingRangeOverride, 0, 100);
   const neighbors = ZONE_NEIGHBORS[zone] ?? [];
 
   // Komşu bölge yoksa ileri bölgeye ilerle.
@@ -503,7 +579,7 @@ export function choosePassTarget(
   if (
     style === 'counter' &&
     forward.length > 0 &&
-    chance(0.85)
+    chance(clamp(0.62 + passingRange / 400, 0.55, 0.90))
   ) {
     return pick(forward);
   }
@@ -517,10 +593,34 @@ export function choosePassTarget(
     return pick(backward);
   }
 
+  // Yüksek pres topu kazandığında dikine ve hızlı çıkış arar.
+  if (
+    style === 'high_press' &&
+    forward.length > 0 &&
+    chance(0.78)
+  ) {
+    return pick(forward);
+  }
+
+  // Derin blokta risk azaltılır, geriye/yan pas tercih edilir.
+  if (
+    style === 'low_block' &&
+    backward.length > 0 &&
+    chance(0.55)
+  ) {
+    return pick(backward);
+  }
+
+  // Kanat oyunu, uygun komşu bölgeler içinden geniş koridorları seçer.
+  if (style === 'wing_play') {
+    const wide = neighbors.filter(target => target % 3 !== 1);
+    if (wide.length > 0 && chance(0.65)) return pick(wide);
+  }
+
   // Uzun pas.
   if (
     skill(carrier, 'longPassing') > 14 &&
-    chance(0.25)
+    chance(clamp(0.08 + passingRange / 250, 0.08, 0.48))
   ) {
     return pick(neighbors);
   }
@@ -528,7 +628,7 @@ export function choosePassTarget(
   // İleri pas.
   if (
     forward.length > 0 &&
-    chance(0.70)
+    chance(clamp(0.48 + passingRange / 400 + (style === 'direct' ? 0.12 : 0), 0.35, 0.88))
   ) {
     return pick(forward);
   }

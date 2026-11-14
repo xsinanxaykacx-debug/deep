@@ -6,7 +6,8 @@
     "build:cli": "tsc",
     "build:browser": "esbuild browser.ts --bundle --outfile=browser.js --format=iife",
     "build": "npm run build:cli && npm run build:browser",
-    "start": "node dist/app.js"
+    "test": "npm run build:cli && node dist/simulation-test.js",
+    "start": "npm run build:cli && node dist/app.js"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
