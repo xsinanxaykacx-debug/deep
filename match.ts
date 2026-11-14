@@ -123,19 +123,19 @@ function chooseContextualAction(
   // Şut ancak saha bölgesi, oyuncu profili ve baskı birlikte uygunsa seçilir.
   if (zone === 10) {
     const shotChance = clamp(
-      0.22 + (shooting - 10) * 0.016 +
+      0.25 + (shooting - 10) * 0.017 +
       (decisions - 10) * 0.007 - pressure * 0.17 +
       (tactics.tempo - 50) * 0.001,
-      0.08, 0.52
+      0.09, 0.54
     );
     if (chance(shotChance)) return 'shot';
   }
   if ((zone === 9 || zone === 11) && shooting >= 13 && pressure < 0.58 &&
-      chance(clamp(0.08 + (shooting - 12) * 0.012, 0.04, 0.24))) {
+      chance(clamp(0.09 + (shooting - 12) * 0.012, 0.05, 0.26))) {
     return 'shot';
   }
   if (zone >= 6 && zone <= 8 && shooting >= 15 && pressure < 0.35 &&
-      chance(clamp(0.05 + (shooting - 15) * 0.007, 0.03, 0.14))) {
+      chance(clamp(0.06 + (shooting - 15) * 0.007, 0.04, 0.16))) {
     return 'shot';
   }
 
@@ -293,7 +293,7 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     else stats.awayPossessionMinutes++;
 
     // Dakikada 3-5 top aksiyonu: pas zinciri ve baskı mücadeleleri aynı dakika içinde akar.
-    const actionsThisMinute = 3 + rng(3);
+    const actionsThisMinute = 4 + rng(2);
     let involvedHomeId: string | null = null;
     let involvedAwayId: string | null = null;
     for (let actionIndex = 0; actionIndex < actionsThisMinute; actionIndex++) {
