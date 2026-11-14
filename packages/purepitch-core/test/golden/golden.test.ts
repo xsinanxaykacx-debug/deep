@@ -78,10 +78,6 @@ describe('Golden Test — v4 determinizmi', () => {
 });
 
 describe('Golden Test — golden-master regresyon', () => {
-  it('P0e-1 yeni golden hashlerini raporlar', () => {
-    const result = runScenario(SCENARIO);
-    console.log('PUREPITCH_GOLDEN_HASHES=' + JSON.stringify(result.hashes));
-  });
   const masterPath = fileURLToPath(new URL('./golden-master.json', import.meta.url));
   const hasMaster = existsSync(masterPath);
 
@@ -100,7 +96,7 @@ describe('Golden Test — golden-master regresyon', () => {
     for (const h of master.hashes) assertHashFormat(h);
   });
 
-  it.skip('P0e-1 golden master geçici olarak yeniden üretiliyor', () => {
+  it.skipIf(!hasMaster)('mevcut motor golden-master ile eşleşir', () => {
     const master = JSON.parse(readFileSync(masterPath, 'utf-8')) as {
       hashes: string[];
       tickCount: number;
