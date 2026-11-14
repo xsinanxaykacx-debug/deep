@@ -112,6 +112,12 @@ export type PlayerIntent =
       readonly shootSpin: Vector3D;
     }
   | {
+      readonly kind: 'dribble';
+      readonly sprint: boolean;
+      readonly dribbleDirection: number;
+      readonly success: boolean;
+    }
+  | {
       readonly kind: 'tackle';
       readonly targetVelocity: Vector2D;
       readonly sprint: boolean;

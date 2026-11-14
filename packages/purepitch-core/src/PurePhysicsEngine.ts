@@ -44,7 +44,8 @@ export class PurePhysicsEngine implements IPhysicsEngine {
         sprint: false
       };
 
-      const targetVel = intent.targetVelocity;
+      // Dribble bir top aksiyonudur; ayrıca oyuncu hedef hızı taşımaz.
+      const targetVel = 'targetVelocity' in intent ? intent.targetVelocity : srcPlayer.velocity;
       const maxSpeed = intent.sprint
         ? srcPlayer.attributes.maxSpeed * 1.2
         : srcPlayer.attributes.maxSpeed;
@@ -110,12 +111,13 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     const ball = next.ball;
     if (ball.ownerId !== null || ball.position.z > 0.5) return;
 
+    const dribbleActive = next.tickId < ball.dribbleUntilTick;
     const pickupRadius = this.config.playerRadius;
     const pickupRadiusSq = pickupRadius * pickupRadius;
 
     // Son dokunan oyuncu, top pickup yarıçapından uzaklaşana kadar
     // yalnızca kendisi için pickup adayı değildir; diğer oyuncular yarışabilir.
-    if (ball.lastTouchId) {
+    if (ball.lastTouchId && !dribbleActive) {
       const lastToucher = next.players.get(ball.lastTouchId);
       if (!lastToucher) {
         ball.lastTouchId = null;
@@ -133,6 +135,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     // playerOrder deterministik tie-break sırasıdır.
     // Küçük tolerans, çarpışma çözümünden gelen kayan nokta sınır hatalarını önler.
     for (const id of next.playerOrder) {
+      if (dribbleActive && id === ball.lastTouchId) continue;
       if (id === ball.lastTouchId) continue;
       const player = next.players.get(id);
       if (!player) continue;
@@ -155,6 +158,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
 
     ball.ownerId = bestId;
     ball.lastTouchId = bestId;
+    ball.dribbleUntilTick = 0;
     ball.controlStrength = 1.0;
     ball.velocity = { x: picker.velocity.x, y: picker.velocity.y, z: 0 };
     ball.position.x = picker.position.x;
@@ -178,6 +182,23 @@ export class PurePhysicsEngine implements IPhysicsEngine {
       case 'tackle':
         return;
 
+      case 'dribble': {
+        if (!Number.isFinite(intent.dribbleDirection)) return;
+        const dribbleTick = next.tickId - 1;
+        const speed = intent.success ? 5 : 1.5;
+        next.ball.velocity = {
+          x: Math.cos(intent.dribbleDirection) * speed,
+          y: Math.sin(intent.dribbleDirection) * speed,
+          z: 0
+        };
+        next.ball.ownerId = null;
+        next.ball.lastTouchId = ownerId;
+        next.ball.controlStrength = intent.success ? 0.8 : 0;
+        next.ball.spin = { x: 0, y: 0, z: 0 };
+        next.ball.dribbleUntilTick = intent.success ? dribbleTick + 30 : 0;
+        return;
+      }
+
       case 'pass': {
         const owner = next.players.get(ownerId);
         const target = next.players.get(intent.passTargetId);
@@ -189,6 +210,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
         if (dist < 1e-6) return;
 
         next.ball.lastTouchId = ownerId;
+        next.ball.dribbleUntilTick = 0;
         next.ball.velocity = {
           x: (dx / dist) * intent.passSpeed,
           y: (dy / dist) * intent.passSpeed,
@@ -204,6 +226,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
         if (!Number.isFinite(intent.shootSpeed) || intent.shootSpeed < 0 ||
             !Number.isFinite(intent.shootDirection)) return;
         next.ball.lastTouchId = ownerId;
+        next.ball.dribbleUntilTick = 0;
         next.ball.velocity = {
           x: Math.cos(intent.shootDirection) * intent.shootSpeed,
           y: Math.sin(intent.shootDirection) * intent.shootSpeed,
@@ -247,6 +270,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
 
       next.ball.ownerId = id;
       next.ball.lastTouchId = id;
+      next.ball.dribbleUntilTick = 0;
       next.ball.controlStrength = 1;
       next.ball.velocity = { x: tackler.velocity.x, y: tackler.velocity.y, z: 0 };
       next.ball.position.x = tackler.position.x + Math.cos(tackler.facing) * this.config.ballOffset;
