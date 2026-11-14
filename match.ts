@@ -5,7 +5,7 @@ import {
   resolvePass, resolveShot, resolveDribble, resolveCross,
   choosePassTarget, skill, findDefender
 } from './rules';
-import { rng, chance, roll } from './chance';
+import { rng, chance } from './chance';
 import type { Player } from './player';
 
 type LineupEntry = { player: Player; slot: FormationSlot };
@@ -263,8 +263,6 @@ export function simulateMatch(home: Team, away: Team): MatchState {
   const usedSubsAway = new Set<string>();
 
   let carrierId: string | null = null;
-  let possessionSequence = 0;
-  let consecutivePasses = 0;
   let attackCount = 0;
   let lastPossession: Side = 'home';
   const totalMinutes = 90 + rng(4);
@@ -273,8 +271,6 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     st.minute = minute;
 
     if (st.possession !== lastPossession) {
-      possessionSequence = 0;
-      consecutivePasses = 0;
       attackCount = 0;
       carrierId = null;
       lastPossession = st.possession;
@@ -378,7 +374,6 @@ export function simulateMatch(home: Team, away: Team): MatchState {
         result = resolvePass(carrier, target, activeDef, defendingTeam.tactics);
         if (result.success) {
           if (isHome) stats.homePassesCompleted++; else stats.awayPassesCompleted++;
-          consecutivePasses++;
         }
       }
     }
@@ -418,13 +413,11 @@ export function simulateMatch(home: Team, away: Team): MatchState {
       // Duran top: faul hücum bölgesindeyse serbest vuruş konumu korunur.
       st.zone = result.nextZone;
       carrierId = null;
-      possessionSequence++;
       continue;
     }
 
     st.zone = result.nextZone;
     attackCount++;
-    possessionSequence++;
 
     if (result.possessionChange) {
       st.possession = isHome ? 'away' : 'home';
