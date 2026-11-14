@@ -97,7 +97,10 @@ export function createFixtureState(): MatchState {
 
   // Golden pas senaryosunda home_10 alıcı koridorunda sabit kalır.
   const scriptedReceiver = players.get('home_10')!;
-  scriptedReceiver.roleAnchor = { ...scriptedReceiver.position };
+  players.set('home_10', {
+    ...scriptedReceiver,
+    roleAnchor: { ...scriptedReceiver.position },
+  });
 
   return { tickId: 0, ball, players, playerOrder };
 }
