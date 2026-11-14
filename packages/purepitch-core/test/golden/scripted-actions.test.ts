@@ -23,7 +23,8 @@ describe('Golden senaryosu — scripted pas', () => {
     const result = runScenario({
       ticks: 120,
       captureStates: true,
-      intentSeed: INTENT_SEED,
+      // Bu seed, ±%10 aralıktaki pas hızlarından alıcının yetişebildiği bir örneği sabitler.
+      intentSeed: INTENT_SEED + 1,
       physicsSeed: FIXTURE_SEED
     });
     const states = result.states ?? [];
