@@ -109,9 +109,8 @@ export function stateToBytes(state: MatchState): Uint8Array {
     pushF64(p.velocity.x);
     pushF64(p.velocity.y);
     pushF64(p.stamina);
-    // v4'te facing PlayerState tipinde yok — cast ile okuyoruz.
-    // v5'te tipe eklenince bu cast kalkacak ve golden-master yenilenecek.
-    pushF64((p as { facing?: number }).facing ?? 0);
+    // facing artık PlayerState sözleşmesinin zorunlu alanı.
+    pushF64(p.facing);
     // Immutable alanlar da hash'e girer — referans sızıntısı tespiti için.
     pushF64(p.attributes.maxSpeed);
     pushF64(p.attributes.acceleration);
@@ -196,7 +195,7 @@ export function diffState(a: MatchState, b: MatchState): StateDiff[] {
     push(`player[${id}].vel.x`, pa.velocity.x, pb.velocity.x);
     push(`player[${id}].vel.y`, pa.velocity.y, pb.velocity.y);
     push(`player[${id}].stamina`, pa.stamina, pb.stamina);
-    push(`player[${id}].facing`, (pa as { facing?: number }).facing ?? 0, (pb as { facing?: number }).facing ?? 0);
+    push(`player[${id}].facing`, pa.facing, pb.facing);
     push(`player[${id}].attributes.maxSpeed`, pa.attributes.maxSpeed, pb.attributes.maxSpeed);
     push(`player[${id}].attributes.acceleration`, pa.attributes.acceleration, pb.attributes.acceleration);
     push(`player[${id}].attributes.agility`, pa.attributes.agility, pb.attributes.agility);

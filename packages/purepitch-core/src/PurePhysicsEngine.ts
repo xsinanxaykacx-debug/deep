@@ -79,15 +79,16 @@ export class PurePhysicsEngine implements IPhysicsEngine {
       };
 
       const speed = Math.sqrt(newVel.x * newVel.x + newVel.y * newVel.y);
-      const facing = speed > 0.1 ? Math.atan2(newVel.y, newVel.x) : (srcPlayer as any).facing || 0;
+      const facing = speed > 0.1 ? Math.atan2(newVel.y, newVel.x) : srcPlayer.facing;
 
       const targetPlayerState = next.players.get(id)!;
-      Object.assign(targetPlayerState, srcPlayer, {
-        position: newPos,
-        velocity: newVel,
-        facing,
-        stamina: Math.max(0, srcPlayer.stamina - (intent.sprint ? 0.05 : 0.01) * dt)
-      });
+      targetPlayerState.position = newPos;
+      targetPlayerState.velocity = newVel;
+      targetPlayerState.facing = facing;
+      targetPlayerState.stamina = Math.max(
+        0,
+        srcPlayer.stamina - (intent.sprint ? 0.05 : 0.01) * dt
+      );
     }
 
     // 2. ADIM: Sıralı silindirik çarpışma ve impulse
@@ -159,7 +160,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     if (prevBall.ownerId) {
       const owner = next.players.get(prevBall.ownerId);
       if (owner) {
-        const facing = (owner as any).facing || 0;
+        const facing = owner.facing;
         const dirX = Math.cos(facing);
         const dirY = Math.sin(facing);
 

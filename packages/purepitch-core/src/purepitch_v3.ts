@@ -23,6 +23,8 @@ export interface PlayerState {
   readonly teamId: 'home' | 'away';
   position: Vector2D;
   velocity: Vector2D;
+  /** Radyan cinsinden bakış yönü; 0 = +x ekseni. */
+  facing: number;
   stamina: number;
   readonly attributes: PlayerAttributes;
   readonly roleAnchor: Vector2D;

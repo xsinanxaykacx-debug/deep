@@ -63,6 +63,7 @@ export function createFixtureState(): MatchState {
         y: anchor[1] + (rng.next() - 0.5) * 2,
       },
       velocity: { x: 0, y: 0 },
+      facing: 0,
       stamina: 100,
       attributes: attrs,
       roleAnchor: { x: anchor[0], y: anchor[1] },
