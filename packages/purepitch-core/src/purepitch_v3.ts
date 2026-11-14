@@ -6,7 +6,7 @@ export type Vector3D = { x: number; y: number; z: number };
 
 export type DeepReadonly<T> =
   T extends (infer U)[] ? ReadonlyArray<DeepReadonly<U>> :
-  T extends Map<infer K, infer V> ? ReadonlyMap<K, DeepReadonly<V>> :
+  T extends ReadonlyMap<infer K, infer V> ? ReadonlyMap<K, DeepReadonly<V>> :
   T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> } : T;
 
 export interface PlayerAttributes {
