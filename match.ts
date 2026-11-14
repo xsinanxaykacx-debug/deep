@@ -333,7 +333,7 @@ export function simulateMatch(home: Team, away: Team): MatchState {
 
     let result: ReturnType<typeof resolveShot>;
     if (action === 'shot') {
-      result = resolveShot(carrier, st.zone, activeDef);
+      result = resolveShot(carrier, st.zone, activeDef, pressure);
       if (result.goal) {
         if (isHome) stats.homeScore++; else stats.awayScore++;
         st.events.push(`${minute}' ${result.text}`);
