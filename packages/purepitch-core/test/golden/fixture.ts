@@ -1,7 +1,7 @@
 // Deterministik test fixture'ı — aynı seed her koşuda aynı 22 oyuncu + top.
 // Motorun kendi PRNG'sinden BAĞIMSIZ (test amaçlı).
 
-import type { MatchState, PlayerState, PlayerIntent, IRandomSource, BallState } from '../../src/purepitch_v3.js';
+import type { MatchState, PlayerState, PlayerIntent, IRandomSource, BallState, PlayerAttributes } from '../../src/purepitch_v3.js';
 
 export class SeededRandom implements IRandomSource {
   private state: number;
@@ -46,7 +46,7 @@ export function createFixtureState(): MatchState {
     anchor: readonly [number, number],
     withStrength: boolean,
   ): PlayerState => {
-    const attrs: Record<string, number> = {
+    const attrs: PlayerAttributes & { strength?: number } = {
       maxSpeed: 6.0 + rng.next() * 3.0,
       acceleration: 5.0 + rng.next() * 4.0,
       agility: 0.5 + rng.next() * 0.5,
@@ -64,7 +64,7 @@ export function createFixtureState(): MatchState {
       },
       velocity: { x: 0, y: 0 },
       stamina: 100,
-      attributes: attrs as PlayerState['attributes'],
+      attributes: attrs,
       roleAnchor: { x: anchor[0], y: anchor[1] },
     };
   };
