@@ -13,6 +13,9 @@ on:
       - ".github/workflows/purepitch-core.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   purepitch-core:
     runs-on: ubuntu-latest
@@ -22,13 +25,47 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: feature/purepitch-core-isolated
+          persist-credentials: true
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.23.4
+          cache: npm
+          cache-dependency-path: packages/purepitch-core/package-lock.json
       - name: Install package dependencies
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
       - name: TypeScript build
         run: npm run build
-      - name: Golden determinism tests
+      - name: Golden determinism and regression tests
         run: npm run test:golden -- --reporter=verbose
+      - name: Security audit (report only during baseline)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      - name: Generate golden master after determinism tests pass
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ ! -f test/golden/golden-master.json ]; then
+            npm run golden:update
+          else
+            echo "Golden master already exists; leaving the committed baseline unchanged."
+          fi
+      - name: Commit generated lockfile and initial golden master
+        if: github.event_name != 'pull_request'
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/purepitch-core/package-lock.json packages/purepitch-core/test/golden/golden-master.json
+          if git diff --cached --quiet; then
+            echo "No generated baseline files to commit."
+          else
+            git commit -m "golden: pin v4 baseline and package lock (Node 22.23.4)"
+            git push origin HEAD:feature/purepitch-core-isolated
+          fi
