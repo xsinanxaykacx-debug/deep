@@ -394,6 +394,7 @@ export function simulateMatch(home: Team, away: Team): MatchState {
 
     if (result.isFoul) {
       if (isHome) stats.awayFouls++; else stats.homeFouls++;
+      st.events.push(`${minute}' ${result.text}`);
       const offender = activeDef.find(item => item.player.id === result.foulPlayerId)?.player;
       const defendingYellow = isHome ? yellowsAway : yellowsHome;
       const defendingSentOffSet = isHome ? sentOffAway : sentOffHome;
