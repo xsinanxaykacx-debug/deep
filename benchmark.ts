@@ -155,6 +155,12 @@ function main(): void {
   let totalFouls = 0;
   let totalYellowCards = 0;
   let totalRedCards = 0;
+  let totalPasses = 0;
+  let totalPassesCompleted = 0;
+  let totalPossessionMinutes = 0;
+  let totalTackles = 0;
+  let totalOffsides = 0;
+  let totalSubstitutions = 0;
 
   seed(RANDOM_SEED);
 
@@ -201,6 +207,12 @@ function main(): void {
     totalFouls += stats.homeFouls + stats.awayFouls;
     totalYellowCards += stats.homeYellowCards + stats.awayYellowCards;
     totalRedCards += stats.homeRedCards + stats.awayRedCards;
+    totalPasses += stats.homePasses + stats.awayPasses;
+    totalPassesCompleted += stats.homePassesCompleted + stats.awayPassesCompleted;
+    totalPossessionMinutes += stats.homePossessionMinutes;
+    totalTackles += stats.homeTackles + stats.awayTackles;
+    totalOffsides += stats.homeOffsides + stats.awayOffsides;
+    totalSubstitutions += stats.homeSubstitutions + stats.awaySubstitutions;
 
     if (homeGoals > awayGoals) homeWins++;
     else if (homeGoals < awayGoals) awayWins++;
@@ -286,6 +298,12 @@ function main(): void {
     averageFouls: round(totalFouls / MATCH_COUNT, 2),
     averageYellowCards: round(totalYellowCards / MATCH_COUNT, 2),
     averageRedCards: round(totalRedCards / MATCH_COUNT, 3),
+    averagePasses: round(totalPasses / MATCH_COUNT, 2),
+    passCompletionPct: percent(totalPassesCompleted, totalPasses),
+    averagePossessionPctHome: percent(totalPossessionMinutes, MATCH_COUNT * 90),
+    averageTackles: round(totalTackles / MATCH_COUNT, 2),
+    averageOffsides: round(totalOffsides / MATCH_COUNT, 2),
+    averageSubstitutions: round(totalSubstitutions / MATCH_COUNT, 2),
     goalsDistributionPct: {
       '0-1': percent(goalBuckets['0-1'], MATCH_COUNT),
       '2-3': percent(goalBuckets['2-3'], MATCH_COUNT),
@@ -333,6 +351,12 @@ function main(): void {
   console.log(`Faul / maç:               ${metrics.averageFouls}`);
   console.log(`Sarı kart / maç:          ${metrics.averageYellowCards}`);
   console.log(`Kırmızı kart / maç:       ${metrics.averageRedCards}`);
+  console.log(`Pas / maç:                ${metrics.averagePasses}`);
+  console.log(`Pas isabeti:              %${metrics.passCompletionPct}`);
+  console.log(`Ev sahibi topa sahip:     %${metrics.averagePossessionPctHome}`);
+  console.log(`Müdahale / maç:           ${metrics.averageTackles}`);
+  console.log(`Ofsayt / maç:             ${metrics.averageOffsides}`);
+  console.log(`Değişiklik / maç:         ${metrics.averageSubstitutions}`);
   console.log(`Güç-puan korelasyonu:     ${metrics.powerVsPointsPerMatchCorrelation ?? 'hesaplanamadı'}`);
 
   console.log('\n--- TOPLAM GOL DAĞILIMI ---');
