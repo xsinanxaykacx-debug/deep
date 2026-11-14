@@ -213,7 +213,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     const rangeSq = range * range;
 
     // playerOrder sırası deterministik tie-break kuralıdır.
-    for (const id of current.playerOrder) {
+    for (const id of next.playerOrder) {
       if (id === ownerId) continue;
 
       const intent = intents.get(id);
