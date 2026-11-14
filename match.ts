@@ -178,7 +178,7 @@ function applySubstitution(
   const candidates = lineup
     .filter(item => item.player.position !== 'GK' &&
       !sentOff.has(item.player.id) &&
-      item.player.condition < (minute >= 75 ? 69 : 58))
+      item.player.condition < (minute >= 75 ? 86 : 90))
     .sort((a, b) => a.player.condition - b.player.condition);
 
   if (candidates.length === 0) return;
