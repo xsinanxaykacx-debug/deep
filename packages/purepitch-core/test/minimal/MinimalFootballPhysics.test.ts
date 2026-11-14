@@ -34,15 +34,24 @@ describe('minimal football physics slice', () => {
     const attacker = scene.players.find(player => player.id === 'attacker')!;
     const defender = scene.players.find(player => player.id === 'defender')!;
     const goalkeeper = scene.players.find(player => player.id === 'goalkeeper')!;
-    expect(attacker.attributes.finishing).toBe(84);
-    expect(attacker.attributes.heading).toBe(78);
-    expect(attacker.attributes.dribbling).toBe(76);
-    expect(attacker.attributes.pace).toBe(83);
-    expect(defender.attributes.marking).toBe(86);
-    expect(defender.attributes.tackling).toBe(84);
+    expect('finishing' in attacker.attributes).toBe(true);
+    if ('finishing' in attacker.attributes) {
+      expect(attacker.attributes.finishing).toBe(84);
+      expect(attacker.attributes.heading).toBe(78);
+      expect(attacker.attributes.dribbling).toBe(76);
+      expect(attacker.attributes.pace).toBe(83);
+    }
+    expect('marking' in defender.attributes).toBe(true);
+    if ('marking' in defender.attributes) {
+      expect(defender.attributes.marking).toBe(86);
+      expect(defender.attributes.tackling).toBe(84);
+    }
     expect(defender.archetype).toContain('stoper');
-    expect(goalkeeper.attributes.reflexes).toBe(86);
-    expect(goalkeeper.attributes.oneOnOne).toBe(82);
+    expect('reflexes' in goalkeeper.attributes).toBe(true);
+    if ('reflexes' in goalkeeper.attributes) {
+      expect(goalkeeper.attributes.reflexes).toBe(86);
+      expect(goalkeeper.attributes.oneOnOne).toBe(82);
+    }
     for (const profile of MINIMAL_PLAYER_PROFILES) {
       for (const value of Object.values(profile.attributes)) {
         expect(value).toBeGreaterThanOrEqual(0);
