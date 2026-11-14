@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   purepitch-core:
@@ -35,17 +35,8 @@ jobs:
         run: npm ci
       - name: TypeScript build
         run: npm run build
-      - name: Regenerate golden master for P0e-2 verification
-        run: npm run golden:update
       - name: Golden determinism and regression tests
         run: npm run test:golden -- --reporter=verbose
-      - name: Commit verified golden master
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add test/golden/golden-master.json
-          git commit -m "test: P0e-2 tick-scoped RNG golden master" || exit 1
-          git push
       - name: Physics unit tests
         run: npm run test -- --reporter=verbose
       - name: Security audit
