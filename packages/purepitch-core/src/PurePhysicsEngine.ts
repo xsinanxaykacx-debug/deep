@@ -178,28 +178,42 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     }
 
     const gravity = 9.81;
+
+    // 1. Dikey hız ve yerçekimi: Magnus hesabında kullanılacak vz bu tick'e aittir.
     let vz = prevBall.velocity.z - gravity * dt;
     let z = prevBall.position.z + vz * dt;
 
+    // 2. Zemin çarpışması dikey hız güncellemesinden sonra çözülür.
     if (z <= 1e-4 && vz < 0) {
       z = 0;
       vz = -vz * this.config.restitution;
     }
 
+    // 3. Yatay hızın tick başındaki değerleri alınır. Magnus çapraz çarpımı
+    //    tek bir ara hız vektörü (vx, vy, vz) üzerinden hesaplanır.
+    let vx = prevBall.velocity.x;
+    let vy = prevBall.velocity.y;
     const k = this.config.magnusCoefficient;
-    const spinCrossVelX = prevBall.spin.y * vz - prevBall.spin.z * prevBall.velocity.y;
-    const spinCrossVelY = prevBall.spin.z * prevBall.velocity.x - prevBall.spin.x * vz;
-    const spinCrossVelZ = prevBall.spin.x * prevBall.velocity.y - prevBall.spin.y * prevBall.velocity.x;
 
-    const vx = (prevBall.velocity.x + k * spinCrossVelX * dt) * this.config.groundFriction;
-    const vy = (prevBall.velocity.y + k * spinCrossVelY * dt) * this.config.groundFriction;
-    const finalVz = vz + k * spinCrossVelZ * dt;
+    const spinCrossVelX = prevBall.spin.y * vz - prevBall.spin.z * vy;
+    const spinCrossVelY = prevBall.spin.z * vx - prevBall.spin.x * vz;
+    const spinCrossVelZ = prevBall.spin.x * vy - prevBall.spin.y * vx;
 
+    // 4. Hava kaynaklı Magnus ivmesi uygulanır.
+    vx += k * spinCrossVelX * dt;
+    vy += k * spinCrossVelY * dt;
+    vz += k * spinCrossVelZ * dt;
+
+    // 5. Zemin sürtünmesi yalnızca yatay bileşenlere uygulanır.
+    vx *= this.config.groundFriction;
+    vy *= this.config.groundFriction;
+
+    // 6. Konum, son hızlardan güncellenir.
     ball.position.x = prevBall.position.x + vx * dt;
     ball.position.y = prevBall.position.y + vy * dt;
     ball.position.z = Math.max(0, z);
 
-    ball.velocity = { x: vx, y: vy, z: finalVz };
+    ball.velocity = { x: vx, y: vy, z: vz };
     ball.spin = { ...prevBall.spin };
     ball.ownerId = null;
     ball.controlStrength = Math.max(0, prevBall.controlStrength - 0.1 * dt);
