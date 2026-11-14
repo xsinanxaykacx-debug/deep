@@ -261,7 +261,7 @@ export function resolveShot(
   // Gol olasılığı isabetli şut koşuluna bağlıdır; uzak şut ve baskı
   // kaliteyi düşürür, kalecinin seviyesi doğrudan karşılık verir.
   const goalProbability = clamp(
-    0.45 +
+    0.42 +
     (shotPower - 10) * 0.018 +
     (composure - 10) * 0.006 -
     (goalkeeperValue - 10) * 0.014 -
