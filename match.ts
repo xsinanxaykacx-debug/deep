@@ -180,7 +180,7 @@ function applySubstitution(
   const candidates = lineup
     .filter(item => item.player.position !== 'GK' &&
       !sentOff.has(item.player.id) &&
-      item.player.condition < (minute >= 75 ? 86 : 90))
+      item.player.condition < (minute >= 75 ? 87 : 90))
     .sort((a, b) => a.player.condition - b.player.condition);
 
   if (candidates.length === 0) return;
@@ -222,8 +222,8 @@ function updateCondition(
   for (const item of lineup) {
     if (sentOff.has(item.player.id)) continue;
     const involved = item.player.id === carrierId;
-    const workload = 0.055 + pressing * 0.00055 + tempo * 0.00025 +
-      (involved ? 0.045 : 0);
+    const workload = 0.13 + pressing * 0.0007 + tempo * 0.0003 +
+      (involved ? 0.05 : 0);
     item.player.condition = clamp(item.player.condition - workload, 35, 100);
   }
 }
@@ -382,6 +382,8 @@ export function simulateMatch(home: Team, away: Team): MatchState {
         result = resolvePass(carrier, target, activeDef, defendingTeam.tactics);
         if (result.success) {
           if (isHome) stats.homePassesCompleted++; else stats.awayPassesCompleted++;
+        } else if (!result.isFoul) {
+          if (isHome) stats.awayTackles++; else stats.homeTackles++;
         }
       }
     }
