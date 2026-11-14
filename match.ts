@@ -123,19 +123,19 @@ function chooseContextualAction(
   // Şut ancak saha bölgesi, oyuncu profili ve baskı birlikte uygunsa seçilir.
   if (zone === 10) {
     const shotChance = clamp(
-      0.16 + (shooting - 10) * 0.012 +
-      (decisions - 10) * 0.006 - pressure * 0.18 +
+      0.30 + (shooting - 10) * 0.018 +
+      (decisions - 10) * 0.008 - pressure * 0.16 +
       (tactics.tempo - 50) * 0.001,
-      0.04, 0.48
+      0.12, 0.62
     );
     if (chance(shotChance)) return 'shot';
   }
   if ((zone === 9 || zone === 11) && shooting >= 13 && pressure < 0.58 &&
-      chance(clamp(0.04 + (shooting - 12) * 0.012, 0.03, 0.18))) {
+      chance(clamp(0.10 + (shooting - 12) * 0.015, 0.06, 0.30))) {
     return 'shot';
   }
   if (zone >= 6 && zone <= 8 && shooting >= 15 && pressure < 0.35 &&
-      chance(0.035 + (shooting - 15) * 0.006)) {
+      chance(clamp(0.07 + (shooting - 15) * 0.008, 0.04, 0.18))) {
     return 'shot';
   }
 
