@@ -37,7 +37,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     (next as { tickId: number }).tickId = nextTick;
 
     // 1. ADIM: Oyuncu fizik güncellemesi
-    for (const id of current.playerOrder) {
+    for (const id of next.playerOrder) {
       const srcPlayer = current.players.get(id)!;
       const intent = intents.get(id) || {
         kind: 'move' as const,
@@ -94,14 +94,57 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     // 2. ADIM: Sıralı silindirik çarpışma ve impulse
     this.resolveCylindricalCollisions(next);
 
-    // 3. ADIM: Top fiziği — mevcut sahibin ayağına yerleştirir.
+    // 3. ADIM: Top fiziği — mevcut sahibin ayağına yerleştirir veya serbest topu ilerletir.
     this.updateBallPhysics(current.ball, next, dt, rng);
 
-    // 4. ADIM: Top sahibine karşı gelen deterministik tackle'lar.
-    this.resolveTackles(current, intents, next);
+    // 4. ADIM: Serbest ve alçak top için deterministik pickup.
+    this.resolvePickup(next);
 
-    // 5. ADIM: Tackle sonrası hâlâ top sahibi olan oyuncunun pası/şutu.
+    // 5. ADIM: Güncel top sahibine karşı gelen deterministik tackle'lar.
+    this.resolveTackles(intents, next);
+
+    // 6. ADIM: Tackle sonrası hâlâ top sahibi olan oyuncunun pası/şutu.
     this.processOwnerAction(intents, next);
+  }
+
+  private resolvePickup(next: MatchState): void {
+    const ball = next.ball;
+    if (ball.ownerId !== null || ball.position.z > 0.5) return;
+
+    const pickupRadius = this.config.playerRadius;
+    const pickupRadiusSq = pickupRadius * pickupRadius;
+    let bestId: string | null = null;
+    let bestDistSq = Infinity;
+
+    // playerOrder deterministik tie-break sırasıdır.
+    // Küçük tolerans, çarpışma çözümünden gelen kayan nokta sınır hatalarını önler.
+    for (const id of next.playerOrder) {
+      const player = next.players.get(id);
+      if (!player) continue;
+
+      const dx = ball.position.x - player.position.x;
+      const dy = ball.position.y - player.position.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq > pickupRadiusSq + 1e-9) continue;
+
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        bestId = id;
+      }
+    }
+
+    if (bestId === null) return;
+
+    const picker = next.players.get(bestId);
+    if (!picker) return;
+
+    ball.ownerId = bestId;
+    ball.controlStrength = 1.0;
+    ball.velocity = { x: picker.velocity.x, y: picker.velocity.y, z: 0 };
+    ball.position.x = picker.position.x;
+    ball.position.y = picker.position.y;
+    ball.position.z = 0.1;
+    ball.spin = { x: 0, y: 0, z: 0 };
   }
 
   private processOwnerAction(
@@ -156,11 +199,11 @@ export class PurePhysicsEngine implements IPhysicsEngine {
   }
 
   private resolveTackles(
-    current: Readonly<MatchState>,
     intents: ReadonlyMap<string, PlayerIntent>,
     next: MatchState
   ): void {
-    const ownerId = current.ball.ownerId;
+    // Pickup sonrasında topun güncel sahibi hedef alınır.
+    const ownerId = next.ball.ownerId;
     if (!ownerId) return;
 
     const owner = next.players.get(ownerId);
