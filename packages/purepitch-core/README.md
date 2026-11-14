@@ -39,3 +39,20 @@ The initial determinism run may be executed before a golden master exists. The p
 golden-master regression tests are skipped until
 `test/golden/golden-master.json` is committed. Generate that file explicitly
 with `npm run golden:update` only after two independent scenario runs match.
+
+
+## Double-buffer sözleşmesi
+
+`PlayerState.position`, `velocity`, `facing` ve `stamina` tick sırasında güncellenen
+state alanlarıdır. `attributes` ve `roleAnchor` ise immutable kabul edilir:
+
+- `PlayerAttributes` alanları `readonly` olarak tanımlıdır.
+- `roleAnchor`, `Readonly<Vector2D>` olarak tanımlıdır; koordinatları yerinde değiştirilemez.
+- Fizik motoru bu iki alanı hiçbir tick'te mutasyona uğratmaz. Buffer oluşturucu bunlar için
+  current/next arasında referans paylaşabilir.
+- Gelecekte oyuncu niteliği veya rol çapası değişecekse mevcut nesne mutate edilmez;
+  yeni bir nesne oluşturulup ilgili state'e atanır.
+
+Bu sözleşme, double-buffer state'inin tick'ler arasında sessizce geriye dönük
+değişmesini önler. Golden determinism testi tek başına bu immutability garantisini
+kanıtlamaz; garanti TypeScript tipleri ve motorun yazma sınırıyla korunur.

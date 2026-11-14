@@ -82,6 +82,8 @@ export class PurePhysicsEngine implements IPhysicsEngine {
       const facing = speed > 0.1 ? Math.atan2(newVel.y, newVel.x) : srcPlayer.facing;
 
       const targetPlayerState = next.players.get(id)!;
+      // attributes ve roleAnchor salt okunur sözleşmedir; motor bunları mutasyona uğratmaz.
+      // Buffer allocator bu immutable alanlar için referans paylaşabilir; değişiklikte yeni nesne atanmalıdır.
       targetPlayerState.position = newPos;
       targetPlayerState.velocity = newVel;
       targetPlayerState.facing = facing;

@@ -27,7 +27,7 @@ export interface PlayerState {
   facing: number;
   stamina: number;
   readonly attributes: PlayerAttributes;
-  readonly roleAnchor: Vector2D;
+  readonly roleAnchor: Readonly<Vector2D>;
 }
 
 export interface BallState {
