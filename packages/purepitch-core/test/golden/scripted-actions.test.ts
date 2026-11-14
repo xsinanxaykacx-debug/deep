@@ -26,17 +26,6 @@ describe('Golden senaryosu — scripted pas', () => {
     });
     const states = result.states ?? [];
     const firstPickup = states.slice(12).find((state) => state.ball.ownerId !== null);
-    for (const tick of [11, 12, 20, 40, 60, 100, 120]) {
-      const state = states[tick];
-      const receiver = state?.players.get('home_10');
-      console.log(
-        `TRACE tick=${tick} ball=(${state?.ball.position.x.toFixed(3)},${state?.ball.position.y.toFixed(3)},${state?.ball.position.z.toFixed(3)}) owner=${state?.ball.ownerId} lastTouch=${state?.ball.lastTouchId} receiver=(${receiver?.position.x.toFixed(3)},${receiver?.position.y.toFixed(3)})`
-      );
-    }
-
-    console.log(
-      `P0d-2b pickup: tick=${firstPickup?.tickId ?? 'none'}, owner=${firstPickup?.ball.ownerId ?? 'none'}`
-    );
-    expect(states.some((state) => state.ball.ownerId === 'home_10')).toBe(true);
+    expect(firstPickup?.ball.ownerId).toBe('home_10');
   });
 });
