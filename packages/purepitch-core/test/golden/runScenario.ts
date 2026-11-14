@@ -1,0 +1,106 @@
+// Tek koşu — motor davranışını DEĞİŞTİRMEZ, sadece gözlemler.
+
+import type { MatchState, IRandomSource, PlayerState } from '../../src/purepitch_v3.js';
+import { PurePhysicsEngine, type PhysicsConfig } from '../../src/PurePhysicsEngine.js';
+import {
+  createFixtureState,
+  createDeterministicIntents,
+  SeededRandom,
+  FIXTURE_SEED,
+  INTENT_SEED,
+} from './fixture.js';
+import { hashState } from './hashState.js';
+
+export interface ScenarioConfig {
+  readonly ticks: number;
+  /** true ise her tick'in state snapshot'ı saklanır (bellek pahalı). */
+  readonly captureStates?: boolean;
+  readonly engineConfig?: PhysicsConfig;
+  readonly intentSeed?: number;
+  readonly physicsSeed?: number;
+}
+
+export interface ScenarioResult {
+  readonly hashes: readonly string[];
+  /** captureStates=true ise dolu, aksi halde null. states[t] = tick t sonrası. */
+  readonly states: readonly MatchState[] | null;
+  readonly finalState: MatchState;
+  readonly config: Required<Omit<ScenarioConfig, 'engineConfig'>> & {
+    engineConfig: PhysicsConfig | undefined;
+  };
+}
+
+function clonePlayer(p: PlayerState): PlayerState {
+  return {
+    ...p,
+    position: { ...p.position },
+    velocity: { ...p.velocity },
+    attributes: { ...p.attributes },
+    roleAnchor: { ...p.roleAnchor },
+  };
+}
+
+function cloneState(s: MatchState): MatchState {
+  const clonedPlayers = new Map<string, PlayerState>();
+  for (const [id, p] of s.players) clonedPlayers.set(id, clonePlayer(p));
+  return {
+    tickId: s.tickId,
+    ball: {
+      position: { ...s.ball.position },
+      velocity: { ...s.ball.velocity },
+      spin: { ...s.ball.spin },
+      ownerId: s.ball.ownerId,
+      controlStrength: s.ball.controlStrength,
+    },
+    players: clonedPlayers,
+    playerOrder: [...s.playerOrder],
+  };
+}
+
+export function runScenario(config: ScenarioConfig): ScenarioResult {
+  const ticks = config.ticks;
+  const capture = config.captureStates === true;
+  const intentSeed = config.intentSeed ?? INTENT_SEED;
+  const physicsSeed = config.physicsSeed ?? FIXTURE_SEED;
+
+  const engine = new PurePhysicsEngine(config.engineConfig);
+  const initial = createFixtureState();
+
+  // Double-buffer: current ve next ayrı nesneler.
+  let current: MatchState = initial;
+  let next: MatchState = cloneState(initial);
+
+  const hashes: string[] = [hashState(current)];
+  const states: MatchState[] | null = capture ? [cloneState(current)] : null;
+
+  const intentRng: IRandomSource = new SeededRandom(intentSeed);
+
+  for (let t = 0; t < ticks; t++) {
+    const intents = createDeterministicIntents(current, t, intentRng);
+    // Her tick'te fizik motoru için taze RNG — v4 kullanmıyor ama sözleşme gereği.
+    const physicsRng: IRandomSource = new SeededRandom((physicsSeed ^ (t * 0x9E3779B1)) >>> 0);
+
+    engine.step(current, intents, next, 1 / 60, physicsRng);
+
+    // Swap
+    const tmp = current;
+    current = next;
+    next = tmp;
+
+    hashes.push(hashState(current));
+    if (states) states.push(cloneState(current));
+  }
+
+  return {
+    hashes,
+    states,
+    finalState: current,
+    config: {
+      ticks,
+      captureStates: capture,
+      intentSeed,
+      physicsSeed,
+      engineConfig: config.engineConfig,
+    },
+  };
+}
