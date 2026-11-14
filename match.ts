@@ -337,7 +337,6 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     } else if (action === 'cross') {
       result = resolveCross(carrier, st.zone, activeDef, activeAtk, defendingTeam.tactics);
       if (result.isCorner) {
-        if (isHome) stats.homeCorners++; else stats.awayCorners++;
         // Korner hücumu aynı takımda kalır, top ceza alanına taşınır.
         st.zone = 10;
         carrierId = null;
@@ -376,6 +375,11 @@ export function simulateMatch(home: Team, away: Team): MatchState {
           if (isHome) stats.homePassesCompleted++; else stats.awayPassesCompleted++;
         }
       }
+    }
+
+    if (result.isCorner) {
+      if (isHome) stats.homeCorners++; else stats.awayCorners++;
+      st.events.push(`${minute}' Korner.`);
     }
 
     if (result.isShot) {
