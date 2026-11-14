@@ -121,7 +121,7 @@ export function checkFoul(
     20
   );
 
-  const foulChance = (aggression / 20) * 0.15;
+  const foulChance = (aggression / 20) * 0.22;
 
   if (!chance(foulChance)) {
     return {
@@ -130,11 +130,11 @@ export function checkFoul(
     };
   }
 
-  const cardChance = (aggression / 20) * 0.3;
+  const cardChance = (aggression / 20) * 0.18;
 
   let card: 'yellow' | 'red' | null = null;
 
-  if (chance(cardChance * 0.1)) {
+  if (chance(cardChance * 0.06)) {
     card = 'red';
   } else if (chance(cardChance)) {
     card = 'yellow';
@@ -221,7 +221,8 @@ export function resolvePass(
 export function resolveShot(
   carrier: Player,
   zone: PitchZone,
-  oppLineup: LineupEntry[]
+  oppLineup: LineupEntry[],
+  pressure = 0
 ): ActionResult {
   const goalkeeper = oppLineup.find(
     item => item.player.position === 'GK'
@@ -229,51 +230,54 @@ export function resolveShot(
 
   const goalkeeperValue = goalkeeper
     ? (
-        skill(goalkeeper, 'goalkeeping') * 0.7 +
-        skill(goalkeeper, 'reflexes') * 0.3
+        skill(goalkeeper, 'goalkeeping') * 0.55 +
+        skill(goalkeeper, 'reflexes') * 0.30 +
+        skill(goalkeeper, 'positioning') * 0.15
       )
     : 8;
 
   const distanceMultiplier =
-    zone === 10
-      ? 1
-      : zone === 9 || zone === 11
-        ? 0.8
-        : 0.55;
+    zone === 10 ? 1 :
+    zone === 9 || zone === 11 ? 0.72 :
+    zone >= 6 && zone <= 8 ? 0.48 : 0.30;
 
-  const shotPower =
-    skill(carrier, 'shooting') * distanceMultiplier;
+  const shotPower = skill(carrier, 'shooting') * distanceMultiplier;
+  const composure = skill(carrier, 'composure');
+  const decisions = skill(carrier, 'decisions');
+  const defensivePressure = clamp(pressure, 0, 1);
 
-  const hitPost = chance(0.03);
+  const hitPost = chance(zone === 10 ? 0.025 : 0.012);
+  const accuracyChance = clamp(
+    0.34 +
+    (skill(carrier, 'shooting') - 10) * 0.022 +
+    (decisions - 10) * 0.006 -
+    defensivePressure * 0.22,
+    0.16,
+    0.72
+  );
+  const onTarget = !hitPost && chance(accuracyChance);
+  const goalkeeperError = chance(0.006);
 
-  const onTarget =
-    !hitPost && roll(shotPower, 8, 0.10);
-
-  const goalkeeperError = chance(0.02);
-
+  // Gol olasılığı isabetli şut koşuluna bağlıdır; uzak şut ve baskı
+  // kaliteyi düşürür, kalecinin seviyesi doğrudan karşılık verir.
   const goalProbability = clamp(
-    (shotPower / Math.max(1, goalkeeperValue * 1.5)) * 0.45,
-    0.10,
-    0.50
+    0.13 +
+    (shotPower - 10) * 0.014 +
+    (composure - 10) * 0.004 -
+    (goalkeeperValue - 10) * 0.014 -
+    defensivePressure * 0.11,
+    0.025,
+    0.34
   );
 
-  const isGoal =
-    (onTarget || goalkeeperError) &&
-    chance(goalProbability);
+  const isGoal = goalkeeperError || (onTarget && chance(goalProbability));
 
   let text: string;
-
-  if (isGoal) {
-    text = `GOL! ${carrier.name} (Zone ${zone})`;
-  } else if (hitPost) {
-    text = `Direkten döndü: ${carrier.name}`;
-  } else if (goalkeeperError) {
-    text = `Kaleci hatası, ancak gol olmadı!`;
-  } else if (onTarget) {
-    text = `Kaleci kurtardı: ${carrier.name}`;
-  } else {
-    text = `Şut kaçtı: ${carrier.name}`;
-  }
+  if (isGoal) text = `GOL! ${carrier.name} (Zone ${zone})`;
+  else if (hitPost) text = `Direkten döndü: ${carrier.name}`;
+  else if (goalkeeperError) text = 'Kaleci hatası!';
+  else if (onTarget) text = `Kaleci kurtardı: ${carrier.name}`;
+  else text = `Şut auta gitti: ${carrier.name}`;
 
   return {
     success: isGoal,
@@ -282,7 +286,7 @@ export function resolveShot(
     goal: isGoal,
     isShot: true,
     onTarget: onTarget || goalkeeperError,
-    saved: !isGoal && (onTarget || goalkeeperError),
+    saved: !isGoal && onTarget,
     text
   };
 }
@@ -424,7 +428,7 @@ export function resolveCross(
     );
 
     const headerOnTarget = headerSuccess && chance(0.65);
-    const isGoal = headerOnTarget && chance(0.45);
+    const isGoal = headerOnTarget && chance(clamp(0.20 + (headerPower - 10) * 0.012 - (defenderValue - 10) * 0.01, 0.08, 0.32));
 
     if (isGoal) {
       return {
