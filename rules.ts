@@ -44,6 +44,16 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+function pressingLevel(tactics?: TeamTactics): number {
+  const base = tactics?.pressing ?? 50;
+  const styleBonus = tactics?.style === 'high_press'
+    ? 12
+    : tactics?.style === 'low_block'
+      ? -10
+      : 0;
+  return clamp(base + styleBonus, 0, 100);
+}
+
 function getForwardZone(zone: PitchZone): PitchZone {
   return Math.min(11, zone + 1) as PitchZone;
 }
@@ -78,9 +88,10 @@ export function findDefender(
   const targetInfo = PITCH_ZONES[defendZone];
   const depth = clamp(tactics?.depth ?? 50, 0, 100);
   const width = clamp(tactics?.width ?? 50, 0, 100);
-  const pressing = clamp(tactics?.pressing ?? 50, 0, 100);
+  const pressing = pressingLevel(tactics);
+  const styleDepth = tactics?.style === 'high_press' ? 0.20 : tactics?.style === 'low_block' ? -0.20 : 0;
   const desiredRow = clamp(
-    targetInfo.id / 3 + (depth - 50) / 100,
+    Math.floor(targetInfo.id / 3) + (depth - 50) / 100 + styleDepth,
     0,
     3
   );
@@ -207,7 +218,7 @@ export function resolvePass(
         skill(defender, 'tackling') * 0.45 +
         skill(defender, 'marking') * 0.30 +
         skill(defender, 'positioning') * 0.25
-      ) * (0.85 + clamp(defensiveTactics?.pressing ?? 50, 0, 100) / 100 * 0.30)
+      ) * (0.85 + pressingLevel(defensiveTactics) / 100 * 0.30)
     : 5;
 
   const success = roll(
@@ -404,7 +415,7 @@ export function resolveCross(
     ? (
         skill(defender, 'heading') * 0.5 +
         skill(defender, 'strength') * 0.5
-      ) * (0.90 + clamp(defensiveTactics?.pressing ?? 50, 0, 100) / 500)
+      ) * (0.90 + pressingLevel(defensiveTactics) / 500)
     : 5;
 
   // Korner.
@@ -579,6 +590,30 @@ export function choosePassTarget(
     chance(0.40)
   ) {
     return pick(backward);
+  }
+
+  // Yüksek pres topu kazandığında dikine ve hızlı çıkış arar.
+  if (
+    style === 'high_press' &&
+    forward.length > 0 &&
+    chance(0.78)
+  ) {
+    return pick(forward);
+  }
+
+  // Derin blokta risk azaltılır, geriye/yan pas tercih edilir.
+  if (
+    style === 'low_block' &&
+    backward.length > 0 &&
+    chance(0.55)
+  ) {
+    return pick(backward);
+  }
+
+  // Kanat oyunu, uygun komşu bölgeler içinden geniş koridorları seçer.
+  if (style === 'wing_play') {
+    const wide = neighbors.filter(target => target % 3 !== 1);
+    if (wide.length > 0 && chance(0.65)) return pick(wide);
   }
 
   // Uzun pas.
