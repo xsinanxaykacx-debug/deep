@@ -201,11 +201,12 @@ export function resolvePass(
   carrier: Player,
   target: PitchZone,
   oppLineup: LineupEntry[],
-  defensiveTactics?: TeamTactics
+  defensiveTactics?: TeamTactics,
+  sourceZone?: PitchZone
 ): ActionResult {
   const defender = findDefender(target, oppLineup, defensiveTactics);
 
-  const longPass = Math.abs(target - zone) >= 3;
+  const longPass = Math.abs(target - (sourceZone ?? target)) >= 3;
   const passValue = longPass
     ? skill(carrier, 'passing') * 0.45 + skill(carrier, 'longPassing') * 0.55 - 0.6
     : skill(carrier, 'passing');
