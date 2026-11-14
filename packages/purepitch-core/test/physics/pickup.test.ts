@@ -12,7 +12,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([player], ball);
     const next = makeEmptyState([player], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
     expect(next.ball.controlStrength).toBe(1);
@@ -28,7 +28,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([player], ball);
     const next = makeEmptyState([player], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBeNull();
   });
@@ -40,7 +40,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([near, far], ball);
     const next = makeEmptyState([near, far], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -52,7 +52,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([first, second], ball);
     const next = makeEmptyState([first, second], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -68,7 +68,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([passer], ball);
     const next = makeEmptyState([passer], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBeNull();
     expect(next.ball.lastTouchId).toBe('home_1');
@@ -86,7 +86,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([passer, receiver], ball);
     const next = makeEmptyState([passer, receiver], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.lastTouchId).toBe('home_2');
     expect(next.ball.ownerId).toBe('home_2');
@@ -110,7 +110,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([owner, challenger], ball);
     const next = makeEmptyState([owner, challenger], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -130,7 +130,7 @@ describe('pickup — deterministik top kontrolü', () => {
       }]
     ]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('away_1');
   });
@@ -141,7 +141,7 @@ describe('pickup — deterministik top kontrolü', () => {
     const current = makeEmptyState([player], ball);
     const next = makeEmptyState([player], ball);
 
-    new PurePhysicsEngine().step(current, noIntents, next, DT;
+    new PurePhysicsEngine().step(current, noIntents, next, DT);
 
     expect(next.ball.ownerId).toBeNull();
   });

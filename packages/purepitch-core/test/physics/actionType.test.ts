@@ -16,7 +16,7 @@ describe('PlayerIntent: pass', () => {
       passTargetId: 'home_2', passSpeed: 15
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBeNull();
     expect(next.ball.controlStrength).toBe(0);
@@ -34,7 +34,7 @@ describe('PlayerIntent: pass', () => {
       passTargetId: 'missing', passSpeed: 15
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -50,7 +50,7 @@ describe('PlayerIntent: shoot', () => {
       shootSpeed: 25, shootDirection: 0, shootSpin: { x: 1, y: 2, z: 5 }
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBeNull();
     expect(next.ball.velocity.x).toBeCloseTo(25, 8);
@@ -70,7 +70,7 @@ describe('PlayerIntent: tackle', () => {
       tackleTargetId: 'home_1'
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('away_1');
     expect(next.ball.lastTouchId).toBe('away_1');
@@ -86,7 +86,7 @@ describe('PlayerIntent: tackle', () => {
       tackleTargetId: 'home_1'
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -101,7 +101,7 @@ describe('PlayerIntent: tackle', () => {
       tackleTargetId: 'home_1'
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -117,7 +117,7 @@ describe('PlayerIntent: tackle', () => {
       ['away_2', { kind: 'tackle', targetVelocity: { x: 0, y: 0 }, sprint: false, tackleTargetId: 'home_1' }]
     ]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT;
+    new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('away_1');
   });
