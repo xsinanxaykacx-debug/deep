@@ -346,7 +346,7 @@ function main(): void {
   }
 
   console.log('\n--- TAKIM PERFORMANSI (GÜÇ SIRASI) ---');
-  console.log('Takım'.padEnd(24) + 'G-M-B-M'.padEnd(14) + 'P/M'.padEnd(8) + 'AG/M'.padEnd(8) + 'YG/M'.padEnd(8) + 'Güç');
+  console.log('Takım'.padEnd(24) + 'G-B-M'.padEnd(14) + 'P/M'.padEnd(8) + 'AG/M'.padEnd(8) + 'YG/M'.padEnd(8) + 'Güç');
   for (const team of teamReport) {
     const record = `${team.wins}-${team.draws}-${team.losses}`;
     console.log(
