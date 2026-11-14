@@ -1,9 +1,10 @@
 import type { PitchZone } from './pitch';
+import { PITCH_ZONES } from './pitch';
 import type { Team, FormationSlot } from './core';
 import { resolveLineup, pickBallCarrier } from './core';
 import {
   resolvePass, resolveShot, resolveDribble, resolveCross,
-  choosePassTarget, skill, findDefender
+  choosePassTarget, skill
 } from './rules';
 import { rng, chance } from './chance';
 import type { Player } from './player';
@@ -94,15 +95,54 @@ function pressureLevel(
   defenders: LineupEntry[],
   tactics: Team['tactics']
 ): number {
-  const defender = findDefender(zone, defenders);
-  if (!defender) return 0;
-  const pressing = clamp(tactics.pressing, 0, 100);
-  const defensiveSkill = (
-    skill(defender, 'positioning') +
-    skill(defender, 'marking') +
-    skill(defender, 'workRate')
-  ) / 3;
-  return clamp((defensiveSkill / 20) * 0.55 + (pressing / 100) * 0.45, 0, 1);
+  if (defenders.length === 0) return 0;
+
+  const mirrorZone = PITCH_ZONES[zone].mirrorZone;
+  const targetLane = mirrorZone % 3;
+  const styleShift =
+    tactics.style === 'high_press' ? 0.45 :
+    tactics.style === 'low_block' ? -0.35 : 0;
+  const depthShift = ((clamp(tactics.depth, 0, 100) - 50) / 100) * 0.45;
+  const targetRow = clamp(Math.floor(mirrorZone / 3) + styleShift + depthShift, 0, 3);
+  const width = clamp(tactics.width, 0, 100);
+
+  const coverage = defenders
+    .filter(item => item.player.position !== 'GK')
+    .map(item => {
+      const row = Math.floor(item.slot.primaryZone / 3);
+      const lane = item.slot.primaryZone % 3;
+      const wideTarget = targetLane !== 1;
+      const laneWeight = wideTarget
+        ? 0.72 + width / 250
+        : 1.12 - width / 300;
+      const distance = Math.abs(row - targetRow) +
+        Math.abs(lane - targetLane) * laneWeight;
+      const proximity = 1 / (1 + distance * 0.72);
+      const playerQuality = (
+        skill(item.player, 'positioning') +
+        skill(item.player, 'marking') +
+        skill(item.player, 'workRate')
+      ) / 60;
+      return { proximity, playerQuality };
+    })
+    .sort((a, b) => b.proximity - a.proximity)
+    .slice(0, 3);
+
+  if (coverage.length === 0) return 0;
+
+  const proximityTotal = coverage.reduce((sum, item) => sum + item.proximity, 0);
+  const shapeCoverage = proximityTotal / coverage.length;
+  const quality = coverage.reduce(
+    (sum, item) => sum + item.proximity * item.playerQuality,
+    0
+  ) / Math.max(0.001, proximityTotal);
+  const pressingFactor = 0.55 + clamp(tactics.pressing, 0, 100) / 100 * 0.45;
+  const styleFactor =
+    tactics.style === 'high_press' ? 1.12 :
+    tactics.style === 'low_block' ? 0.94 : 1;
+
+  return clamp(shapeCoverage * (0.55 + quality * 0.45) *
+    pressingFactor * styleFactor, 0, 1);
 }
 
 function chooseContextualAction(
