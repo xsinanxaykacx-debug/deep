@@ -44,11 +44,6 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function safePick<T>(items: T[]): T | undefined {
-  if (items.length === 0) return undefined;
-  return pick(items);
-}
-
 function getForwardZone(zone: PitchZone): PitchZone {
   return Math.min(11, zone + 1) as PitchZone;
 }
@@ -94,7 +89,7 @@ export function findDefender(
     .filter(item => item.slot.position !== 'GK' && item.player.position !== 'GK')
     .map(item => {
       const info = PITCH_ZONES[item.slot.primaryZone];
-      const rowDistance = Math.abs(info.id / 3 - desiredRow);
+      const rowDistance = Math.abs(Math.floor(info.id / 3) - desiredRow);
       const laneDistance = Math.abs(
         ['right', 'center', 'left'].indexOf(info.lane) -
         ['right', 'center', 'left'].indexOf(targetInfo.lane)
@@ -199,7 +194,10 @@ export function resolvePass(
 ): ActionResult {
   const defender = findDefender(target, oppLineup, defensiveTactics);
 
-  const passValue = skill(carrier, 'passing');
+  const longPass = Math.abs(target - (target > 0 ? target - 1 : target)) >= 3;
+  const passValue = longPass
+    ? skill(carrier, 'passing') * 0.45 + skill(carrier, 'longPassing') * 0.55 - 0.6
+    : skill(carrier, 'passing');
 
   // Kontrollü kaos: düşük ihtimalle pas kalitesi düşer.
   const chaosFactor = chance(0.05) ? -5 : 0;
@@ -406,7 +404,7 @@ export function resolveCross(
     ? (
         skill(defender, 'heading') * 0.5 +
         skill(defender, 'strength') * 0.5
-      )
+      ) * (0.90 + clamp(defensiveTactics?.pressing ?? 50, 0, 100) / 500)
     : 5;
 
   // Korner.
