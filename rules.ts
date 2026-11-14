@@ -194,7 +194,7 @@ export function resolvePass(
 ): ActionResult {
   const defender = findDefender(target, oppLineup, defensiveTactics);
 
-  const longPass = Math.abs(target - (target > 0 ? target - 1 : target)) >= 3;
+  const longPass = Math.abs(target - zone) >= 3;
   const passValue = longPass
     ? skill(carrier, 'passing') * 0.45 + skill(carrier, 'longPassing') * 0.55 - 0.6
     : skill(carrier, 'passing');
