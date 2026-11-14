@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.23.4
-          cache: npm
-          cache-dependency-path: packages/purepitch-core/package-lock.json
       - name: Install package dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -56,6 +54,9 @@ jobs:
           else
             echo "Golden master already exists; leaving the committed baseline unchanged."
           fi
+      - name: Verify golden-master regression after generation
+        if: github.event_name != 'pull_request'
+        run: npm run test:golden -- --reporter=verbose
       - name: Commit generated lockfile and initial golden master
         if: github.event_name != 'pull_request'
         working-directory: .
