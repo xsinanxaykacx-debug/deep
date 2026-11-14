@@ -33,13 +33,13 @@ function run(): void {
 
     assert(Number.isInteger(result.minute) && result.minute >= 90 && result.minute <= 93,
       'Maç süresi geçersiz.');
-    assert(Number.isInteger(result.stats.homeScore) && result.homeScore >= 0,
+    assert(Number.isInteger(result.stats.homeScore) && result.stats.homeScore >= 0,
       'Ev sahibi skoru geçersiz.');
-    assert(Number.isInteger(result.stats.awayScore) && result.awayScore >= 0,
+    assert(Number.isInteger(result.stats.awayScore) && result.stats.awayScore >= 0,
       'Deplasman skoru geçersiz.');
-    assert(result.homeScore <= result.stats.homeShots,
+    assert(result.stats.homeScore <= result.stats.homeShots,
       'Ev sahibi gol sayısı şut sayısından fazla.');
-    assert(result.awayScore <= result.stats.awayShots,
+    assert(result.stats.awayScore <= result.stats.awayShots,
       'Deplasman gol sayısı şut sayısından fazla.');
     assert(result.stats.homeShots >= 0 && result.stats.awayShots >= 0,
       'Şut istatistiği negatif.');
