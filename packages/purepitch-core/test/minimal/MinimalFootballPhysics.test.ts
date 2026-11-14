@@ -29,33 +29,37 @@ describe('minimal football physics slice', () => {
     expect(scene.goal.height).toBeCloseTo(2.44);
   });
 
-  it('gives each player a distinct continuous football skill profile', () => {
+  it('uses the complete 1-20 player profile categories', () => {
     const scene = createMinimalScene();
     const attacker = scene.players.find(player => player.id === 'attacker')!;
     const defender = scene.players.find(player => player.id === 'defender')!;
     const goalkeeper = scene.players.find(player => player.id === 'goalkeeper')!;
-    expect('finishing' in attacker.attributes).toBe(true);
-    if ('finishing' in attacker.attributes) {
-      expect(attacker.attributes.finishing).toBe(84);
-      expect(attacker.attributes.heading).toBe(78);
-      expect(attacker.attributes.dribbling).toBe(76);
-      expect(attacker.attributes.pace).toBe(83);
-    }
-    expect('marking' in defender.attributes).toBe(true);
-    if ('marking' in defender.attributes) {
-      expect(defender.attributes.marking).toBe(86);
-      expect(defender.attributes.tackling).toBe(84);
-    }
-    expect(defender.archetype).toContain('stoper');
-    expect('reflexes' in goalkeeper.attributes).toBe(true);
-    if ('reflexes' in goalkeeper.attributes) {
-      expect(goalkeeper.attributes.reflexes).toBe(86);
-      expect(goalkeeper.attributes.oneOnOne).toBe(82);
-    }
+
+    expect(attacker.technical.finishing).toBe(17);
+    expect(attacker.mental.offTheBall).toBe(18);
+    expect(attacker.physical.pace).toBe(17);
+    expect(defender.technical.marking).toBe(17);
+    expect(defender.technical.tackling).toBe(17);
+    expect(defender.physical.strength).toBe(18);
+    expect(goalkeeper.goalkeeping?.reflexes).toBe(18);
+    expect(goalkeeper.goalkeeping?.oneOnOnes).toBe(17);
+    expect(attacker.goalkeeping).toBeNull();
+    expect(defender.goalkeeping).toBeNull();
+
     for (const profile of MINIMAL_PLAYER_PROFILES) {
-      for (const value of Object.values(profile.attributes)) {
-        expect(value).toBeGreaterThanOrEqual(0);
-        expect(value).toBeLessThanOrEqual(100);
+      const categories = [
+        profile.technical,
+        profile.mental,
+        profile.physical,
+        profile.hidden,
+        ...(profile.goalkeeping ? [profile.goalkeeping] : []),
+      ];
+      for (const category of categories) {
+        for (const value of Object.values(category)) {
+          expect(Number.isInteger(value)).toBe(true);
+          expect(value).toBeGreaterThanOrEqual(1);
+          expect(value).toBeLessThanOrEqual(20);
+        }
       }
     }
     expect(attacker.maxSpeed).toBeGreaterThan(defender.maxSpeed);
