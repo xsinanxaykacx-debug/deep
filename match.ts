@@ -83,7 +83,7 @@ function getCarrier(
     if (previous && previous.player.position !== 'GK') {
       const fit = previous.slot.primaryZone === zone ||
         Math.abs(previous.slot.primaryZone - zone) <= 3;
-      if (fit && chance(0.72)) return previous.player;
+      if (fit && chance(0.9)) return previous.player;
     }
   }
   return pickBallCarrier(zone, lineup);
@@ -449,8 +449,15 @@ export function simulateMatch(home: Team, away: Team): MatchState {
       carrierId = null;
       attackCount = 0;
     } else {
-      // Başarılı pas/çalımda takım topu ve hücum sekansını korur.
-      carrierId = null;
+      // Başarılı pas sonrası hedef bölgede gerçek bir alıcı seçilir;
+      // başarılı çalımda topu taşıyan oyuncu topu korur.
+      if (action === 'pass' && result.success) {
+        carrierId = pickBallCarrier(st.zone, activeAtk)?.id ?? null;
+      } else if (action === 'dribble' && result.success) {
+        carrierId = carrier.id;
+      } else {
+        carrierId = null;
+      }
     }
 
     // Yüksek pres top kaybı yaratabilir; kondisyon ve pres seviyesi birlikte etkiler.
