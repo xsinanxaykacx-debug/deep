@@ -35,8 +35,15 @@ jobs:
         run: npm ci
       - name: TypeScript build
         run: npm run build
+      - name: Regenerate golden master for P0e-2 verification
+        run: npm run golden:update
       - name: Golden determinism and regression tests
         run: npm run test:golden -- --reporter=verbose
+      - name: Upload regenerated golden master
+        uses: actions/upload-artifact@v4
+        with:
+          name: purepitch-p0e2-golden
+          path: packages/purepitch-core/test/golden/golden-master.json
       - name: Physics unit tests
         run: npm run test -- --reporter=verbose
       - name: Security audit
