@@ -79,9 +79,9 @@ jobs:
         run: |
           if [ -f benchmark-results.json ]; then
             echo "## PurePitch Benchmark (CI runner; indicative only)" >> "$GITHUB_STEP_SUMMARY"
-            echo '\`\`\`json' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat benchmark-results.json >> "$GITHUB_STEP_SUMMARY"
-            echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
           else
             echo "## PurePitch Benchmark" >> "$GITHUB_STEP_SUMMARY"
             echo "Benchmark report was not produced." >> "$GITHUB_STEP_SUMMARY"
