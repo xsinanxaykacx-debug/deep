@@ -5,17 +5,12 @@ import {
 } from '../../src/PurePhysicsEngine.js';
 import type {
   BallState,
-  IRandomSource,
   MatchState,
   PlayerIntent
 } from '../../src/purepitch_v3.js';
 
 const DT = 1 / 60;
 const noIntents = new Map<string, PlayerIntent>();
-const noRng: IRandomSource = {
-  next: () => 0.5,
-  nextUint32: () => 0x80000000
-};
 
 function makeBall(overrides: Partial<BallState> = {}): BallState {
   return {
@@ -44,7 +39,7 @@ function stepBall(ball: BallState, groundFriction = 1): BallState {
   });
   const current = makeState(ball);
   const next = makeState(makeBall());
-  engine.step(current, noIntents, next, DT, noRng);
+  engine.step(current, noIntents, next, DT);
   return next.ball;
 }
 

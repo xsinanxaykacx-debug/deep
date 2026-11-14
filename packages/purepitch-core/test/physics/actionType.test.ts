@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { PurePhysicsEngine } from '../../src/PurePhysicsEngine.js';
-import type { IRandomSource, PlayerIntent } from '../../src/purepitch_v3.js';
+import type { PlayerIntent } from '../../src/purepitch_v3.js';
 import { makeBall, makeEmptyState, makePlayer } from './setup.js';
 
 const DT = 1 / 60;
-const noRng: IRandomSource = {
-  next: () => 0.5,
-  nextUint32: () => 0x80000000
-};
 
 describe('PlayerIntent: pass', () => {
   it('pas topu serbest bırakır ve hedefe doğru istenen hızı uygular', () => {
@@ -20,7 +16,7 @@ describe('PlayerIntent: pass', () => {
       passTargetId: 'home_2', passSpeed: 15
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBeNull();
     expect(next.ball.controlStrength).toBe(0);
@@ -38,7 +34,7 @@ describe('PlayerIntent: pass', () => {
       passTargetId: 'missing', passSpeed: 15
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -54,7 +50,7 @@ describe('PlayerIntent: shoot', () => {
       shootSpeed: 25, shootDirection: 0, shootSpin: { x: 1, y: 2, z: 5 }
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBeNull();
     expect(next.ball.velocity.x).toBeCloseTo(25, 8);
@@ -74,9 +70,10 @@ describe('PlayerIntent: tackle', () => {
       tackleTargetId: 'home_1'
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBe('away_1');
+    expect(next.ball.lastTouchId).toBe('away_1');
   });
 
   it('menzil dışındaki tackle sahipliği değiştirmez', () => {
@@ -89,7 +86,7 @@ describe('PlayerIntent: tackle', () => {
       tackleTargetId: 'home_1'
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -104,7 +101,7 @@ describe('PlayerIntent: tackle', () => {
       tackleTargetId: 'home_1'
     }]]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBe('home_1');
   });
@@ -120,7 +117,7 @@ describe('PlayerIntent: tackle', () => {
       ['away_2', { kind: 'tackle', targetVelocity: { x: 0, y: 0 }, sprint: false, tackleTargetId: 'home_1' }]
     ]);
 
-    new PurePhysicsEngine().step(current, intents, next, DT, noRng);
+    new PurePhysicsEngine().step(current, intents, next, DT;
 
     expect(next.ball.ownerId).toBe('away_1');
   });

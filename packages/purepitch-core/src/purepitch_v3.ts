@@ -128,8 +128,7 @@ export interface IPhysicsEngine {
     current: Readonly<MatchState>,
     intents: ReadonlyMap<string, PlayerIntent>,
     next: MatchState,
-    dt: number,
-    rng: IRandomSource
+    dt: number
   ): void;
 }
 

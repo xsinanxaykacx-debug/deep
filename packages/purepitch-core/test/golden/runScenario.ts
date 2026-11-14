@@ -1,11 +1,11 @@
 // Tek koşu — motor davranışını DEĞİŞTİRMEZ, sadece gözlemler.
 
-import type { MatchState, IRandomSource, PlayerState } from '../../src/purepitch_v3.js';
+import type { MatchState, PlayerState } from '../../src/purepitch_v3.js';
 import { PurePhysicsEngine, type PhysicsConfig } from '../../src/PurePhysicsEngine.js';
 import {
   createFixtureState,
   createScriptedIntents,
-  SeededRandom,
+  SeededRandomProvider,
   FIXTURE_SEED,
   INTENT_SEED,
 } from './fixture.js';
@@ -17,6 +17,7 @@ export interface ScenarioConfig {
   readonly captureStates?: boolean;
   readonly engineConfig?: PhysicsConfig;
   readonly intentSeed?: number;
+  /** Legacy scenario metadata only; the physics engine no longer consumes RNG. */
   readonly physicsSeed?: number;
 }
 
@@ -74,14 +75,13 @@ export function runScenario(config: ScenarioConfig): ScenarioResult {
   const hashes: string[] = [hashState(current)];
   const states: MatchState[] | null = capture ? [cloneState(current)] : null;
 
-  const intentRng: IRandomSource = new SeededRandom(intentSeed);
+  const rngProvider = new SeededRandomProvider(intentSeed);
 
   for (let t = 0; t < ticks; t++) {
-    const intents = createScriptedIntents(current, t, intentRng);
-    // Her tick'te fizik motoru için taze RNG — v4 kullanmıyor ama sözleşme gereği.
-    const physicsRng: IRandomSource = new SeededRandom((physicsSeed ^ (t * 0x9E3779B1)) >>> 0);
+    const aiRng = rngProvider.forAI(current.tickId);
+    const intents = createScriptedIntents(current, t, aiRng);
 
-    engine.step(current, intents, next, 1 / 60, physicsRng);
+    engine.step(current, intents, next, 1 / 60);
 
     // Swap
     const tmp = current;

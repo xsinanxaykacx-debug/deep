@@ -1,7 +1,7 @@
 // Deterministik test fixture'ı — aynı seed her koşuda aynı 22 oyuncu + top.
 // Motorun kendi PRNG'sinden BAĞIMSIZ (test amaçlı).
 
-import type { MatchState, PlayerState, PlayerIntent, IRandomSource, BallState, PlayerAttributes } from '../../src/purepitch_v3.js';
+import type { MatchState, PlayerState, PlayerIntent, IRandomSource, IRandomProvider, BallState, PlayerAttributes } from '../../src/purepitch_v3.js';
 
 export class SeededRandom implements IRandomSource {
   private state: number;
@@ -20,6 +20,16 @@ export class SeededRandom implements IRandomSource {
   next(): number {
     return this.nextUint32() / 0x100000000;
   }
+}
+
+export class SeededRandomProvider implements IRandomProvider {
+  constructor(private readonly masterSeed: number) {}
+  private derive(streamId: number, tickId: number): number {
+    return (this.masterSeed ^ Math.imul(streamId, 0x9E3779B1) ^ tickId) >>> 0;
+  }
+  forAI(tickId: number): IRandomSource { return new SeededRandom(this.derive(1, tickId)); }
+  forPhysics(tickId: number): IRandomSource { return new SeededRandom(this.derive(2, tickId)); }
+  forEvents(tickId: number): IRandomSource { return new SeededRandom(this.derive(3, tickId)); }
 }
 
 export const FIXTURE_SEED = 0xC0FFEE42;

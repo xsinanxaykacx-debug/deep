@@ -2,7 +2,7 @@
 // AI karar vermez; motor yalnızca PlayerIntent içindeki açık aksiyonu yürütür.
 
 import {
-  MatchState, PlayerIntent, IRandomSource, IPhysicsEngine, BallState
+  MatchState, PlayerIntent, IPhysicsEngine, BallState
 } from './purepitch_v3.js';
 
 export interface PhysicsConfig {
@@ -30,8 +30,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     current: Readonly<MatchState>,
     intents: ReadonlyMap<string, PlayerIntent>,
     next: MatchState,
-    dt: number,
-    rng: IRandomSource
+    dt: number
   ): void {
     const nextTick = current.tickId + 1;
     (next as { tickId: number }).tickId = nextTick;
@@ -95,7 +94,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     this.resolveCylindricalCollisions(next);
 
     // 3. ADIM: Top fiziği — mevcut sahibin ayağına yerleştirir veya serbest topu ilerletir.
-    this.updateBallPhysics(current.ball, next, dt, rng);
+    this.updateBallPhysics(current.ball, next, dt);
 
     // 4. ADIM: Serbest ve alçak top için deterministik pickup.
     this.resolvePickup(next);
@@ -114,17 +113,18 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     const pickupRadius = this.config.playerRadius;
     const pickupRadiusSq = pickupRadius * pickupRadius;
 
-    // Pası/şutu atan oyuncu, top ayağından fiziksel olarak uzaklaşana kadar
-    // kendi bıraktığı topu aynı tick döngüsünde anında geri alamaz.
+    // Son dokunan oyuncu, top pickup yarıçapından uzaklaşana kadar
+    // yalnızca kendisi için pickup adayı değildir; diğer oyuncular yarışabilir.
     if (ball.lastTouchId) {
       const lastToucher = next.players.get(ball.lastTouchId);
-      if (lastToucher) {
+      if (!lastToucher) {
+        ball.lastTouchId = null;
+      } else {
         const dx = ball.position.x - lastToucher.position.x;
         const dy = ball.position.y - lastToucher.position.y;
         const distSq = dx * dx + dy * dy;
-        if (distSq <= pickupRadiusSq + 1e-9) return;
+        if (distSq > pickupRadiusSq + 1e-9) ball.lastTouchId = null;
       }
-      ball.lastTouchId = null;
     }
 
     let bestId: string | null = null;
@@ -133,6 +133,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     // playerOrder deterministik tie-break sırasıdır.
     // Küçük tolerans, çarpışma çözümünden gelen kayan nokta sınır hatalarını önler.
     for (const id of next.playerOrder) {
+      if (id === ball.lastTouchId) continue;
       const player = next.players.get(id);
       if (!player) continue;
 
@@ -153,7 +154,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     if (!picker) return;
 
     ball.ownerId = bestId;
-    ball.lastTouchId = null;
+    ball.lastTouchId = bestId;
     ball.controlStrength = 1.0;
     ball.velocity = { x: picker.velocity.x, y: picker.velocity.y, z: 0 };
     ball.position.x = picker.position.x;
@@ -245,6 +246,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
       if (distSq > rangeSq + 1e-9) continue;
 
       next.ball.ownerId = id;
+      next.ball.lastTouchId = id;
       next.ball.controlStrength = 1;
       next.ball.velocity = { x: tackler.velocity.x, y: tackler.velocity.y, z: 0 };
       next.ball.position.x = tackler.position.x + Math.cos(tackler.facing) * this.config.ballOffset;
@@ -311,7 +313,7 @@ export class PurePhysicsEngine implements IPhysicsEngine {
     }
   }
 
-  private updateBallPhysics(prevBall: BallState, next: MatchState, dt: number, rng: IRandomSource): void {
+  private updateBallPhysics(prevBall: BallState, next: MatchState, dt: number): void {
     const ball = next.ball;
     // Double-buffer'da son temas bilgisi de önceki state'ten kopyalanmalıdır.
     ball.lastTouchId = prevBall.lastTouchId ?? null;
