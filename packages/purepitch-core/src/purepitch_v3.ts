@@ -64,8 +64,10 @@ export interface MatchEventBatch {
 export interface GridControlMatrix {
   readonly width: number;
   readonly height: number;
-  /** Q15 fixed-point: -32768 (away) .. +32767 (home) */
+  /** Q15 categorical ownership: -32767 (away), 0 (neutral), +32767 (home); not a probability. */
   readonly ownershipQ15: Int16Array;
+  /** Grid cell size in metres. */
+  readonly cellSize: number;
   readonly tickId: number;
 }
 

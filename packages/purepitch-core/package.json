@@ -8,7 +8,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:golden": "vitest run test/golden/golden.test.ts",
-    "golden:update": "tsx scripts/update-golden-master.ts"
+    "golden:update": "tsx scripts/update-golden-master.ts",
+    "benchmark": "tsx scripts/benchmark-spatial.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

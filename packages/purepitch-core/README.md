@@ -56,3 +56,23 @@ state alanlarıdır. `attributes` ve `roleAnchor` ise immutable kabul edilir:
 Bu sözleşme, double-buffer state'inin tick'ler arasında sessizce geriye dönük
 değişmesini önler. Golden determinism testi tek başına bu immutability garantisini
 kanıtlamaz; garanti TypeScript tipleri ve motorun yazma sınırıyla korunur.
+
+## Pitch control (v6-1)
+
+`SpatialAnalyzer` classifies each grid cell by the team whose player has the
+lowest estimated arrival time (distance divided by maximum speed, with a
+0.1 m/s minimum speed). Grid cells are stored row-major at
+`index = y * width + x`. Cell centers outside the 105 × 68 m pitch remain
+neutral. Exact arrival-time ties are resolved by the first player in
+`playerOrder`.
+
+`ownershipQ15` is a categorical ownership label, **not a control probability**:
+`+32767` means home controls the cell, `-32767` means away controls it, and
+`0` means neither team controls it (including out-of-pitch cells). Graded
+control values (for example, +0.7 home or -0.3 away) require a separate future
+algorithm.
+
+Run the manual, non-CI benchmark from this directory with `npm run benchmark`.
+It warms up the analyzer, measures 1,000 full 1 m grid calculations, and reports
+average milliseconds per tick against the 60 Hz budget. Benchmark timing is
+machine-dependent and is not a CI pass/fail criterion.
