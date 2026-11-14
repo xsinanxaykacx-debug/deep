@@ -133,6 +133,7 @@ describe('pickup — deterministik top kontrolü', () => {
     new PurePhysicsEngine().step(current, intents, next, DT);
 
     expect(next.ball.ownerId).toBe('away_1');
+    expect(next.ball.lastTouchId).toBe('away_1');
   });
 
   it('top havadaysa z 0.5 metrenin üzerindeyken pickup yapılmaz', () => {
