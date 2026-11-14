@@ -1,0 +1,4 @@
+node_modules/
+dist/
+*.tsbuildinfo
+test/golden/golden-master.json.local
