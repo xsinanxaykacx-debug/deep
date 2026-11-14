@@ -21,3 +21,5 @@ jobs:
         run: npm ci
       - name: TypeScript and browser build
         run: npm run build
+      - name: 10,000-match benchmark
+        run: node dist/benchmark.js
