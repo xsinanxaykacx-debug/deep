@@ -80,7 +80,7 @@ export function runScenario(config: ScenarioConfig): ScenarioResult {
   for (let t = 0; t < ticks; t++) {
     // P0e-1 sözleşmesi: her tick bağımsız AI RNG stream'i alır.
     const aiRng = rngProvider.forAI(current.tickId);
-    const intents = createScriptedIntents(current, t, aiRng);
+    const intents = createScriptedIntents(current, t, aiRng, (playerId) => rngProvider.forPlayer(current.tickId, playerId));
 
     engine.step(current, intents, next, 1 / 60);
 

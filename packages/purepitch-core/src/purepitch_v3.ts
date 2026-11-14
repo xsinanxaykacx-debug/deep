@@ -84,6 +84,7 @@ export interface IRandomProvider {
   forAI(tickId: number): IRandomSource;
   forPhysics(tickId: number): IRandomSource;
   forEvents(tickId: number): IRandomSource;
+  forPlayer(tickId: number, playerId: string): IRandomSource;
 }
 
 export interface ISpatialAnalyzer {

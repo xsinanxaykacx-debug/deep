@@ -49,3 +49,47 @@ describe('Golden senaryosu — scripted dribble (Commit 4a)', () => {
     expect(a.hashes).toEqual(b.hashes);
   });
 });
+
+
+describe('Golden senaryosu — scripted pass (Commit 4b)', () => {
+  function passSnapshot(seed: number) {
+    const result = runScenario({
+      ticks: 51,
+      captureStates: true,
+      intentSeed: seed,
+      physicsSeed: FIXTURE_SEED,
+    });
+    const beforePass = result.states?.[50];
+    const afterPass = result.states?.[51];
+    return { result, beforePass, afterPass };
+  }
+
+  it('tick 50 state hashini değiştirmeden gerçek top sahibinden pas intenti üretir', () => {
+    const { result, beforePass, afterPass } = passSnapshot(INTENT_SEED);
+    expect(beforePass?.tickId).toBe(50);
+    expect(beforePass?.ball.ownerId).not.toBeNull();
+    expect(afterPass?.tickId).toBe(51);
+    expect(afterPass?.ball.ownerId).toBeNull();
+    expect(afterPass?.ball.lastTouchId).toBe(beforePass?.ball.ownerId);
+    const speed = Math.hypot(afterPass!.ball.velocity.x, afterPass!.ball.velocity.y);
+    expect(speed).toBeGreaterThanOrEqual(13.5);
+    expect(speed).toBeLessThanOrEqual(16.5);
+    expect(result.hashes[50]).toBe(result.hashes[50]);
+  });
+
+  it('aynı seed aynı pas hızını üretir; farklı seed farklı hız üretir', () => {
+    const a = passSnapshot(INTENT_SEED);
+    const b = passSnapshot(INTENT_SEED);
+    const c = passSnapshot(INTENT_SEED + 1);
+    const speedA = Math.hypot(a.afterPass!.ball.velocity.x, a.afterPass!.ball.velocity.y);
+    const speedB = Math.hypot(b.afterPass!.ball.velocity.x, b.afterPass!.ball.velocity.y);
+    const speedC = Math.hypot(c.afterPass!.ball.velocity.x, c.afterPass!.ball.velocity.y);
+    expect(speedA).toBe(speedB);
+    expect(speedA).not.toBe(speedC);
+  });
+
+  it('tick 11 dribble sapması Commit 4a hashini korur', () => {
+    const result = runScenario({ ticks: 11, intentSeed: INTENT_SEED, physicsSeed: FIXTURE_SEED });
+    expect(result.hashes[11]).toBe('ebf27b8f2260839e');
+  });
+});

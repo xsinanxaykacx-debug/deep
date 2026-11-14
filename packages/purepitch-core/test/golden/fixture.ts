@@ -30,6 +30,15 @@ export class SeededRandomProvider implements IRandomProvider {
   forAI(tickId: number): IRandomSource { return new SeededRandom(this.derive(1, tickId)); }
   forPhysics(tickId: number): IRandomSource { return new SeededRandom(this.derive(2, tickId)); }
   forEvents(tickId: number): IRandomSource { return new SeededRandom(this.derive(3, tickId)); }
+  forPlayer(tickId: number, playerId: string): IRandomSource {
+    let playerHash = 0x811c9dc5;
+    for (let i = 0; i < playerId.length; i++) {
+      playerHash ^= playerId.charCodeAt(i);
+      playerHash = Math.imul(playerHash, 0x01000193);
+    }
+    const seed = (this.masterSeed ^ Math.imul(4, 0x9E3779B1) ^ tickId ^ playerHash) >>> 0;
+    return new SeededRandom(seed);
+  }
 }
 
 export const FIXTURE_SEED = 0xC0FFEE42;
@@ -147,13 +156,14 @@ export function createDeterministicIntents(
   return intents;
 }
 
-/** Golden senaryosu için scripted aksiyon: tick 10'da home_9 başarılı bir dribble yapar.
- * Bu senaryo aksiyonu ek RNG tüketmez; Commit 4a yalnızca dribble mekanizmasını izole eder.
+/** Golden senaryosu scripted aksiyonları: tick 10 dribble ve tick 50 gerçek sahipten pas.
+ * Scripted aksiyonlar temel AI RNG akışını tüketmez; pas hızı oyuncu/tick'e özel stream'den gelir.
  */
 export function createScriptedIntents(
   state: MatchState,
   tick: number,
   rng: IRandomSource,
+  playerRngFor?: (playerId: string) => IRandomSource,
 ): Map<string, PlayerIntent> {
   const intents = createDeterministicIntents(state, tick, rng);
 
@@ -165,6 +175,38 @@ export function createScriptedIntents(
       dribbleDirection: owner?.facing ?? 0,
       success: true,
     });
+  }
+
+  if (tick === 50 && state.ball.ownerId !== null && playerRngFor) {
+    const ownerId = state.ball.ownerId;
+    const owner = state.players.get(ownerId);
+    if (owner) {
+      let targetId: string | null = null;
+      let bestDistanceSq = Infinity;
+      for (const candidateId of state.playerOrder) {
+        const candidate = state.players.get(candidateId);
+        if (!candidate || candidate.teamId !== owner.teamId || candidateId === ownerId) continue;
+        const dx = candidate.position.x - owner.position.x;
+        const dy = candidate.position.y - owner.position.y;
+        const distanceSq = dx * dx + dy * dy;
+        if (distanceSq < bestDistanceSq) {
+          bestDistanceSq = distanceSq;
+          targetId = candidateId;
+        }
+      }
+
+      if (targetId !== null) {
+        const passRng = playerRngFor(ownerId);
+        const passSpeed = 15 * (0.9 + passRng.next() * 0.2);
+        intents.set(ownerId, {
+          kind: 'pass',
+          targetVelocity: owner.velocity,
+          sprint: false,
+          passTargetId: targetId,
+          passSpeed,
+        });
+      }
+    }
   }
 
   return intents;
