@@ -267,7 +267,8 @@ export function simulateMatch(
           carrier,
           target,
           activeDef,
-          defendingTeam.tactics
+          defendingTeam.tactics,
+          st.zone
         );
       }
 
