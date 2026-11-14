@@ -81,6 +81,8 @@ describe('Golden Test — golden-master regresyon', () => {
   it('P0e-1 yeni golden hashlerini raporlar', () => {
     const result = runScenario(SCENARIO);
     console.log('PUREPITCH_GOLDEN_HASHES=' + JSON.stringify(result.hashes));
+    const debug = runScenario({ ticks: 15, captureStates: true, intentSeed: INTENT_SEED });
+    console.log('P0E_DEBUG=' + JSON.stringify(debug.states?.map(s => ({ tick: s.tickId, owner: s.ball.ownerId, lastTouch: s.ball.lastTouchId, ball: s.ball.position, home9: s.players.get('home_9')?.position }))));
   });
   const masterPath = fileURLToPath(new URL('./golden-master.json', import.meta.url));
   const hasMaster = existsSync(masterPath);
