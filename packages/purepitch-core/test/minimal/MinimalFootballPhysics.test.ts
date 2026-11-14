@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createMinimalScene,
   stepMinimalScene,
+  MINIMAL_PLAYER_PROFILES,
   type BallBody,
   type MinimalScene,
   type PlayerBody,
@@ -26,6 +27,29 @@ describe('minimal football physics slice', () => {
     expect(scene.ball.mass).toBeCloseTo(0.43);
     expect(scene.goal.width).toBeCloseTo(7.32);
     expect(scene.goal.height).toBeCloseTo(2.44);
+  });
+
+  it('gives each player a distinct continuous football skill profile', () => {
+    const scene = createMinimalScene();
+    const attacker = scene.players.find(player => player.id === 'attacker')!;
+    const defender = scene.players.find(player => player.id === 'defender')!;
+    const goalkeeper = scene.players.find(player => player.id === 'goalkeeper')!;
+    expect(attacker.attributes.finishing).toBe(84);
+    expect(attacker.attributes.heading).toBe(78);
+    expect(attacker.attributes.dribbling).toBe(76);
+    expect(attacker.attributes.pace).toBe(83);
+    expect(defender.attributes.marking).toBe(86);
+    expect(defender.attributes.tackling).toBe(84);
+    expect(defender.archetype).toContain('stoper');
+    expect(goalkeeper.attributes.reflexes).toBe(86);
+    expect(goalkeeper.attributes.oneOnOne).toBe(82);
+    for (const profile of MINIMAL_PLAYER_PROFILES) {
+      for (const value of Object.values(profile.attributes)) {
+        expect(value).toBeGreaterThanOrEqual(0);
+        expect(value).toBeLessThanOrEqual(100);
+      }
+    }
+    expect(attacker.maxSpeed).toBeGreaterThan(defender.maxSpeed);
   });
 
   it('integrates player acceleration continuously and respects physical limits', () => {

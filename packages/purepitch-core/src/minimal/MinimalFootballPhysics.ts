@@ -19,15 +19,36 @@ export interface Vec3 {
 
 export type PlayerRole = 'attacker' | 'defender' | 'goalkeeper';
 
-export interface PlayerBody {
-  readonly id: string;
-  readonly role: PlayerRole;
-  readonly mass: number;
-  readonly radius: number;
-  readonly maxSpeed: number;
-  readonly maxAcceleration: number;
-  readonly position: Vec2;
-  readonly velocity: Vec2;
+/**
+ * Football skills use a continuous 0..100 scale. They are not booleans:
+ * later ball-control, duel, shooting and movement models consume these values.
+ */
+export interface OutfieldAttributes {
+  readonly finishing: number; readonly heading: number; readonly dribbling: number;
+  readonly firstTouch: number; readonly passing: number; readonly vision: number;
+  readonly crossing: number; readonly longShots: number; readonly pace: number;
+  readonly acceleration: number; readonly agility: number; readonly balance: number;
+  readonly strength: number; readonly stamina: number; readonly workRate: number;
+  readonly positioning: number; readonly anticipation: number; readonly composure: number;
+  readonly jumping: number; readonly marking: number; readonly tackling: number;
+  readonly interceptions: number;
+}
+export interface GoalkeeperAttributes {
+  readonly reflexes: number; readonly oneOnOne: number; readonly positioning: number;
+  readonly handling: number; readonly diving: number; readonly reach: number;
+  readonly kicking: number; readonly distribution: number; readonly composure: number;
+  readonly anticipation: number; readonly agility: number; readonly balance: number;
+  readonly strength: number; readonly stamina: number; readonly jumping: number;
+}
+export interface PlayerProfile {
+  readonly id: string; readonly name: string; readonly role: PlayerRole;
+  /** A playing archetype, not a scripted action sequence. */
+  readonly archetype: string;
+  readonly attributes: OutfieldAttributes | GoalkeeperAttributes;
+}
+export interface PlayerBody extends PlayerProfile {
+  readonly mass: number; readonly radius: number; readonly maxSpeed: number;
+  readonly maxAcceleration: number; readonly position: Vec2; readonly velocity: Vec2;
 }
 
 export interface BallBody {
@@ -126,62 +147,76 @@ function clonePlayer(player: PlayerBody): PlayerBody {
   };
 }
 
-export function createMinimalScene(): MinimalScene {
-  const players: PlayerBody[] = [
-    {
-      id: 'attacker',
-      role: 'attacker',
-      mass: 76,
-      radius: 0.24,
-      maxSpeed: 8.8,
-      maxAcceleration: 5.2,
-      position: { x: 25, y: 0 },
-      velocity: { x: 0, y: 0 },
+export const MINIMAL_PLAYER_PROFILES: readonly PlayerProfile[] = [
+  {
+    id: 'attacker', name: 'Santrafor 9', role: 'attacker',
+    archetype: 'Ceza sahası bitiricisi',
+    attributes: {
+      finishing: 84, heading: 78, dribbling: 76, firstTouch: 81,
+      passing: 68, vision: 70, crossing: 52, longShots: 74,
+      pace: 83, acceleration: 82, agility: 79, balance: 77,
+      strength: 82, stamina: 76, workRate: 72, positioning: 88,
+      anticipation: 85, composure: 86, jumping: 80,
+      marking: 28, tackling: 34, interceptions: 31,
     },
-    {
-      id: 'defender',
-      role: 'defender',
-      mass: 81,
-      radius: 0.25,
-      maxSpeed: 8.1,
-      maxAcceleration: 5.0,
-      position: { x: 36, y: 0.4 },
-      velocity: { x: 0, y: 0 },
+  },
+  {
+    id: 'defender', name: 'Stoper 4', role: 'defender',
+    archetype: 'Savunmacı stoper',
+    attributes: {
+      finishing: 42, heading: 85, dribbling: 58, firstTouch: 66,
+      passing: 68, vision: 62, crossing: 38, longShots: 46,
+      pace: 72, acceleration: 70, agility: 65, balance: 82,
+      strength: 88, stamina: 82, workRate: 80, positioning: 87,
+      anticipation: 88, composure: 74, jumping: 86,
+      marking: 86, tackling: 84, interceptions: 85,
     },
-    {
-      id: 'goalkeeper',
-      role: 'goalkeeper',
-      mass: 84,
-      radius: 0.25,
-      maxSpeed: 7.2,
-      maxAcceleration: 6.0,
-      position: { x: 50.1, y: 0 },
-      velocity: { x: 0, y: 0 },
+  },
+  {
+    id: 'goalkeeper', name: 'Kaleci 1', role: 'goalkeeper',
+    archetype: 'Çizgi kalecisi',
+    attributes: {
+      reflexes: 86, oneOnOne: 82, positioning: 84, handling: 79,
+      diving: 85, reach: 83, kicking: 67, distribution: 68,
+      composure: 80, anticipation: 84, agility: 75, balance: 78,
+      strength: 74, stamina: 72, jumping: 78,
     },
-  ];
+  },
+] as const;
 
+function physicalSpeed(attributes: OutfieldAttributes | GoalkeeperAttributes): number {
+  return 5.2 + ('pace' in attributes ? attributes.pace * 0.038 : attributes.agility * 0.025);
+}
+function physicalAcceleration(attributes: OutfieldAttributes | GoalkeeperAttributes): number {
+  return 2.6 + ('acceleration' in attributes ? attributes.acceleration * 0.034 : attributes.agility * 0.025);
+}
+function createPlayer(profile: PlayerProfile, mass: number, position: Vec2): PlayerBody {
   return {
-    time: 0,
-    players,
+    ...profile, mass, radius: profile.role === 'goalkeeper' ? 0.25 : 0.24,
+    maxSpeed: physicalSpeed(profile.attributes),
+    maxAcceleration: physicalAcceleration(profile.attributes),
+    position, velocity: { x: 0, y: 0 },
+  };
+}
+export function createMinimalScene(): MinimalScene {
+  const profiles = new Map(MINIMAL_PLAYER_PROFILES.map(profile => [profile.id, profile]));
+  const players: PlayerBody[] = [
+    createPlayer(profiles.get('attacker')!, 76, { x: 25, y: 0 }),
+    createPlayer(profiles.get('defender')!, 81, { x: 36, y: 0.4 }),
+    createPlayer(profiles.get('goalkeeper')!, 84, { x: 50.1, y: 0 }),
+  ];
+  return {
+    time: 0, players,
     ball: {
-      mass: 0.43,
-      radius: 0.11,
-      restitution: 0.42,
-      rollingResistance: 0.18,
-      airDrag: 0.012,
+      mass: 0.43, radius: 0.11, restitution: 0.42,
+      rollingResistance: 0.18, airDrag: 0.012,
       position: { x: 25.28, y: 0, z: 0.11 },
       velocity: { x: 0, y: 0, z: 0 },
     },
-    goal: {
-      x: 52.5,
-      centerY: 0,
-      width: 7.32,
-      height: 2.44,
-    },
+    goal: { x: 52.5, centerY: 0, width: 7.32, height: 2.44 },
     goalEvent: null,
   };
 }
-
 function integratePlayer(
   player: PlayerBody,
   acceleration: PlayerAcceleration | undefined,
