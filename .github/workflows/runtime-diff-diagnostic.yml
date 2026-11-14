@@ -1,0 +1,52 @@
+name: PurePitch Runtime Diff Diagnostic
+
+on:
+  push:
+    branches:
+      - diagnostic/purepitch-runtime-diff
+    paths:
+      - "runtime-diff.mts"
+      - ".github/workflows/runtime-diff-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@v4
+      - name: Checkout baseline commit
+        uses: actions/checkout@v4
+        with:
+          ref: 030d4db9f34fe6eb241c7a7a0ab7d183df0b1f58
+          path: old
+          persist-credentials: false
+      - name: Checkout candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: 985eebc9278d1c6cd98c875fdd09f41c238bc667
+          path: new
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+      - name: Install baseline locked dependencies
+        working-directory: old/packages/purepitch-core
+        run: npm ci
+      - name: Install candidate locked dependencies
+        working-directory: new/packages/purepitch-core
+        run: npm ci
+      - name: Capture and compare ticks 0, 1, 10, 50
+        working-directory: new/packages/purepitch-core
+        run: npx tsx ../../../runtime-diff.mts
+      - name: Upload runtime diff JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: purepitch-runtime-diff
+          path: runtime-diff.json
+          if-no-files-found: error
+          retention-days: 14
