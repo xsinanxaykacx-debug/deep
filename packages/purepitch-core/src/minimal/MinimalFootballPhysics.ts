@@ -19,32 +19,45 @@ export interface Vec3 {
 
 export type PlayerRole = 'attacker' | 'defender' | 'goalkeeper';
 
-/**
- * Football skills use a continuous 0..100 scale. They are not booleans:
- * later ball-control, duel, shooting and movement models consume these values.
- */
-export interface OutfieldAttributes {
-  readonly finishing: number; readonly heading: number; readonly dribbling: number;
-  readonly firstTouch: number; readonly passing: number; readonly vision: number;
-  readonly crossing: number; readonly longShots: number; readonly pace: number;
-  readonly acceleration: number; readonly agility: number; readonly balance: number;
-  readonly strength: number; readonly stamina: number; readonly workRate: number;
-  readonly positioning: number; readonly anticipation: number; readonly composure: number;
-  readonly jumping: number; readonly marking: number; readonly tackling: number;
-  readonly interceptions: number;
+/** Football Manager-style player attributes. Every rating is an integer from 1 to 20. */
+export interface TechnicalAttributes {
+  readonly finishing: number; readonly dribbling: number; readonly firstTouch: number;
+  readonly heading: number; readonly corners: number; readonly marking: number;
+  readonly crossing: number; readonly passing: number; readonly penaltyTaking: number;
+  readonly freeKickTaking: number; readonly technique: number; readonly tackling: number;
+  readonly longShots: number; readonly longThrows: number;
 }
-export interface GoalkeeperAttributes {
-  readonly reflexes: number; readonly oneOnOne: number; readonly positioning: number;
-  readonly handling: number; readonly diving: number; readonly reach: number;
-  readonly kicking: number; readonly distribution: number; readonly composure: number;
-  readonly anticipation: number; readonly agility: number; readonly balance: number;
-  readonly strength: number; readonly stamina: number; readonly jumping: number;
+export interface MentalAttributes {
+  readonly aggression: number; readonly bravery: number; readonly workRate: number;
+  readonly decision: number; readonly determination: number; readonly concentration: number;
+  readonly leadership: number; readonly anticipation: number; readonly flair: number;
+  readonly positioning: number; readonly composure: number; readonly teamwork: number;
+  readonly offTheBall: number; readonly vision: number;
+}
+export interface PhysicalAttributes {
+  readonly agility: number; readonly stamina: number; readonly balance: number;
+  readonly strength: number; readonly pace: number; readonly acceleration: number;
+  readonly naturalFitness: number; readonly jumpingReach: number;
+}
+export interface GoalkeepingAttributes {
+  readonly oneOnOnes: number; readonly kicking: number; readonly handling: number;
+  readonly throwing: number; readonly eccentricity: number; readonly aerialReach: number;
+  readonly communication: number; readonly reflexes: number; readonly tendencyToPunch: number;
+}
+export interface HiddenAttributes {
+  readonly ambition: number; readonly professionalism: number; readonly pressure: number;
+  readonly consistency: number; readonly injuryProneness: number; readonly adaptability: number;
 }
 export interface PlayerProfile {
   readonly id: string; readonly name: string; readonly role: PlayerRole;
   /** A playing archetype, not a scripted action sequence. */
   readonly archetype: string;
-  readonly attributes: OutfieldAttributes | GoalkeeperAttributes;
+  readonly technical: TechnicalAttributes;
+  readonly mental: MentalAttributes;
+  readonly physical: PhysicalAttributes;
+  /** Present only for goalkeepers. */
+  readonly goalkeeping: GoalkeepingAttributes | null;
+  readonly hidden: HiddenAttributes;
 }
 export interface PlayerBody extends PlayerProfile {
   readonly mass: number; readonly radius: number; readonly maxSpeed: number;
@@ -147,54 +160,95 @@ function clonePlayer(player: PlayerBody): PlayerBody {
   };
 }
 
+const COMMON_HIDDEN: HiddenAttributes = {
+  ambition: 12, professionalism: 14, pressure: 13,
+  consistency: 13, injuryProneness: 8, adaptability: 12,
+};
+
 export const MINIMAL_PLAYER_PROFILES: readonly PlayerProfile[] = [
   {
     id: 'attacker', name: 'Santrafor 9', role: 'attacker',
     archetype: 'Ceza sahası bitiricisi',
-    attributes: {
-      finishing: 84, heading: 78, dribbling: 76, firstTouch: 81,
-      passing: 68, vision: 70, crossing: 52, longShots: 74,
-      pace: 83, acceleration: 82, agility: 79, balance: 77,
-      strength: 82, stamina: 76, workRate: 72, positioning: 88,
-      anticipation: 85, composure: 86, jumping: 80,
-      marking: 28, tackling: 34, interceptions: 31,
+    technical: {
+      finishing: 17, dribbling: 15, firstTouch: 16, heading: 15,
+      corners: 8, marking: 6, crossing: 9, passing: 12,
+      penaltyTaking: 15, freeKickTaking: 10, technique: 16,
+      tackling: 7, longShots: 14, longThrows: 5,
     },
+    mental: {
+      aggression: 13, bravery: 14, workRate: 13, decision: 15,
+      determination: 16, concentration: 14, leadership: 10,
+      anticipation: 16, flair: 14, positioning: 17, composure: 17,
+      teamwork: 12, offTheBall: 18, vision: 13,
+    },
+    physical: {
+      agility: 16, stamina: 14, balance: 15, strength: 16,
+      pace: 17, acceleration: 17, naturalFitness: 14, jumpingReach: 15,
+    },
+    goalkeeping: null,
+    hidden: { ...COMMON_HIDDEN, ambition: 16, professionalism: 15, pressure: 15, consistency: 14 },
   },
   {
     id: 'defender', name: 'Stoper 4', role: 'defender',
     archetype: 'Savunmacı stoper',
-    attributes: {
-      finishing: 42, heading: 85, dribbling: 58, firstTouch: 66,
-      passing: 68, vision: 62, crossing: 38, longShots: 46,
-      pace: 72, acceleration: 70, agility: 65, balance: 82,
-      strength: 88, stamina: 82, workRate: 80, positioning: 87,
-      anticipation: 88, composure: 74, jumping: 86,
-      marking: 86, tackling: 84, interceptions: 85,
+    technical: {
+      finishing: 7, dribbling: 10, firstTouch: 12, heading: 17,
+      corners: 7, marking: 17, crossing: 6, passing: 12,
+      penaltyTaking: 8, freeKickTaking: 7, technique: 10,
+      tackling: 17, longShots: 8, longThrows: 12,
     },
+    mental: {
+      aggression: 15, bravery: 17, workRate: 16, decision: 14,
+      determination: 16, concentration: 17, leadership: 14,
+      anticipation: 17, flair: 6, positioning: 17, composure: 14,
+      teamwork: 16, offTheBall: 10, vision: 10,
+    },
+    physical: {
+      agility: 12, stamina: 16, balance: 16, strength: 18,
+      pace: 14, acceleration: 14, naturalFitness: 15, jumpingReach: 18,
+    },
+    goalkeeping: null,
+    hidden: { ...COMMON_HIDDEN, ambition: 11, professionalism: 15, pressure: 14, consistency: 15 },
   },
   {
     id: 'goalkeeper', name: 'Kaleci 1', role: 'goalkeeper',
     archetype: 'Çizgi kalecisi',
-    attributes: {
-      reflexes: 86, oneOnOne: 82, positioning: 84, handling: 79,
-      diving: 85, reach: 83, kicking: 67, distribution: 68,
-      composure: 80, anticipation: 84, agility: 75, balance: 78,
-      strength: 74, stamina: 72, jumping: 78,
+    technical: {
+      finishing: 3, dribbling: 6, firstTouch: 10, heading: 5,
+      corners: 3, marking: 4, crossing: 3, passing: 10,
+      penaltyTaking: 3, freeKickTaking: 4, technique: 8,
+      tackling: 4, longShots: 3, longThrows: 5,
     },
+    mental: {
+      aggression: 10, bravery: 15, workRate: 12, decision: 15,
+      determination: 15, concentration: 17, leadership: 14,
+      anticipation: 16, flair: 7, positioning: 17, composure: 16,
+      teamwork: 14, offTheBall: 5, vision: 13,
+    },
+    physical: {
+      agility: 15, stamina: 13, balance: 15, strength: 15,
+      pace: 11, acceleration: 12, naturalFitness: 14, jumpingReach: 16,
+    },
+    goalkeeping: {
+      oneOnOnes: 17, kicking: 13, handling: 16, throwing: 12,
+      eccentricity: 6, aerialReach: 17, communication: 15,
+      reflexes: 18, tendencyToPunch: 8,
+    },
+    hidden: { ...COMMON_HIDDEN, ambition: 13, professionalism: 16, pressure: 16, consistency: 16 },
   },
 ] as const;
 
-function physicalSpeed(attributes: OutfieldAttributes | GoalkeeperAttributes): number {
-  return 5.2 + ('pace' in attributes ? attributes.pace * 0.038 : attributes.agility * 0.025);
+function physicalSpeed(profile: PlayerProfile): number {
+  return 3.0 + profile.physical.pace * 0.22;
 }
-function physicalAcceleration(attributes: OutfieldAttributes | GoalkeeperAttributes): number {
-  return 2.6 + ('acceleration' in attributes ? attributes.acceleration * 0.034 : attributes.agility * 0.025);
+function physicalAcceleration(profile: PlayerProfile): number {
+  return 1.5 + profile.physical.acceleration * 0.20;
 }
 function createPlayer(profile: PlayerProfile, mass: number, position: Vec2): PlayerBody {
   return {
     ...profile, mass, radius: profile.role === 'goalkeeper' ? 0.25 : 0.24,
-    maxSpeed: physicalSpeed(profile.attributes),
-    maxAcceleration: physicalAcceleration(profile.attributes),
+    maxSpeed: physicalSpeed(profile),
+    maxAcceleration: physicalAcceleration(profile),
     position, velocity: { x: 0, y: 0 },
   };
 }
