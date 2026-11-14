@@ -270,12 +270,6 @@ export function simulateMatch(home: Team, away: Team): MatchState {
   for (let minute = 1; minute <= totalMinutes; minute++) {
     st.minute = minute;
 
-    if (st.possession !== lastPossession) {
-      attackCount = 0;
-      carrierId = null;
-      lastPossession = st.possession;
-    }
-
     applySubstitution(homeTeam, H, sentOffHome, minute, usedSubsHome,
       'home', stats, st.events);
     applySubstitution(awayTeam, A, sentOffAway, minute, usedSubsAway,
@@ -296,9 +290,18 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     if (st.possession === 'home') stats.homePossessionMinutes++;
     else stats.awayPossessionMinutes++;
 
-    // Dakika başına bir ana karar; başarılı paslar sonraki dakikalarda
-    // aynı hücum sekansını ve saha bölgesini korur.
-    const isHome = st.possession === 'home';
+    // Dakikada 3-5 top aksiyonu: pas zinciri ve baskı mücadeleleri aynı dakika içinde akar.
+    const actionsThisMinute = 3 + rng(3);
+    let involvedHomeId: string | null = null;
+    let involvedAwayId: string | null = null;
+    for (let actionIndex = 0; actionIndex < actionsThisMinute; actionIndex++) {
+      if (st.possession !== lastPossession) {
+        attackCount = 0;
+        carrierId = null;
+        lastPossession = st.possession;
+      }
+
+      const isHome = st.possession === 'home';
     const atk = isHome ? H : A;
     const def = isHome ? A : H;
     const attackingSentOff = isHome ? sentOffHome : sentOffAway;
@@ -318,6 +321,8 @@ export function simulateMatch(home: Team, away: Team): MatchState {
       continue;
     }
     carrierId = carrier.id;
+    if (isHome) involvedHomeId = carrier.id;
+    else involvedAwayId = carrier.id;
     const pressure = pressureLevel(st.zone, activeDef, defendingTeam.tactics);
 
     // Ev sahibi avantajı küçük bir karar/rahatlık etkisi; doğrudan gol bonusu değil.
@@ -450,9 +455,10 @@ export function simulateMatch(home: Team, away: Team): MatchState {
       if (isHome) stats.awayTackles++; else stats.homeTackles++;
     }
 
-    updateCondition(H, isHome ? carrier.id : null,
+    }
+    updateCondition(H, involvedHomeId,
       homeTeam.tactics.pressing, homeTeam.tactics.tempo, sentOffHome);
-    updateCondition(A, isHome ? null : carrier.id,
+    updateCondition(A, involvedAwayId,
       awayTeam.tactics.pressing, awayTeam.tactics.tempo, sentOffAway);
   }
 
