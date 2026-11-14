@@ -121,7 +121,7 @@ export function checkFoul(
     20
   );
 
-  const foulChance = (aggression / 20) * 0.22;
+  const foulChance = (aggression / 20) * 0.35;
 
   if (!chance(foulChance)) {
     return {
@@ -130,11 +130,11 @@ export function checkFoul(
     };
   }
 
-  const cardChance = (aggression / 20) * 0.18;
+  const cardChance = (aggression / 20) * 0.35;
 
   let card: 'yellow' | 'red' | null = null;
 
-  if (chance(cardChance * 0.06)) {
+  if (chance(cardChance * 0.025)) {
     card = 'red';
   } else if (chance(cardChance)) {
     card = 'yellow';
@@ -248,12 +248,12 @@ export function resolveShot(
 
   const hitPost = chance(zone === 10 ? 0.025 : 0.012);
   const accuracyChance = clamp(
-    0.34 +
+    0.42 +
     (skill(carrier, 'shooting') - 10) * 0.022 +
     (decisions - 10) * 0.006 -
-    defensivePressure * 0.22,
-    0.16,
-    0.72
+    defensivePressure * 0.20,
+    0.20,
+    0.78
   );
   const onTarget = !hitPost && chance(accuracyChance);
   const goalkeeperError = chance(0.006);
@@ -261,13 +261,13 @@ export function resolveShot(
   // Gol olasılığı isabetli şut koşuluna bağlıdır; uzak şut ve baskı
   // kaliteyi düşürür, kalecinin seviyesi doğrudan karşılık verir.
   const goalProbability = clamp(
-    0.13 +
-    (shotPower - 10) * 0.014 +
-    (composure - 10) * 0.004 -
-    (goalkeeperValue - 10) * 0.014 -
-    defensivePressure * 0.11,
-    0.025,
-    0.34
+    0.26 +
+    (shotPower - 10) * 0.018 +
+    (composure - 10) * 0.006 -
+    (goalkeeperValue - 10) * 0.016 -
+    defensivePressure * 0.12,
+    0.05,
+    0.50
   );
 
   const isGoal = goalkeeperError || (onTarget && chance(goalProbability));
