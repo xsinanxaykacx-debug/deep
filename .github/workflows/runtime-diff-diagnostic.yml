@@ -9,7 +9,7 @@ on:
       - ".github/workflows/runtime-diff-diagnostic.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   runtime-diff:
@@ -29,6 +29,11 @@ jobs:
           ref: 985eebc9278d1c6cd98c875fdd09f41c238bc667
           path: new
           persist-credentials: false
+      - name: Checkout feature branch for golden update
+        uses: actions/checkout@v4
+        with:
+          ref: feature/purepitch-core-isolated
+          path: feature
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,11 +47,58 @@ jobs:
       - name: Capture and compare ticks 0, 1, 10, 50
         working-directory: new/packages/purepitch-core
         run: npx tsx ../../../runtime-diff.mts
-      - name: Upload runtime diff JSON
+      - name: Regenerate golden after runtime diff PASS
+        working-directory: new/packages/purepitch-core
+        run: npm run golden:update
+      - name: Verify golden diff contains hashes only
+        working-directory: new/packages/purepitch-core
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const oldPath = '../../../feature/packages/purepitch-core/test/golden/golden-master.json';
+          const newPath = 'test/golden/golden-master.json';
+          const before = JSON.parse(readFileSync(oldPath, 'utf8'));
+          const after = JSON.parse(readFileSync(newPath, 'utf8'));
+          after._generatedAt = before._generatedAt;
+          const normalize = (value) => {
+            const copy = structuredClone(value);
+            delete copy.hashes;
+            return copy;
+          };
+          if (JSON.stringify(normalize(before)) !== JSON.stringify(normalize(after))) {
+            throw new Error('Golden metadata/scenario changed; only hashes may be updated');
+          }
+          if (after.hashes.length !== 1001) {
+            throw new Error('Expected exactly 1001 hashes, got ' + after.hashes.length);
+          }
+          const changed = after.hashes.filter((hash, i) => hash !== before.hashes[i]).length;
+          writeFileSync(newPath, JSON.stringify(after, null, 2) + '\\n');
+          console.log(JSON.stringify({
+            hashCount: after.hashes.length,
+            changedHashCount: changed,
+            initialHash: after.hashes[0],
+            finalHash: after.hashes.at(-1),
+            metadataUnchanged: true
+          }, null, 2));
+          NODE
+      - name: Commit golden update to isolated feature branch
+        run: |
+          cp new/packages/purepitch-core/test/golden/golden-master.json feature/packages/purepitch-core/test/golden/golden-master.json
+          cd feature
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/purepitch-core/test/golden/golden-master.json
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "test(purepitch): update golden for dribble state schema"
+          git push origin HEAD:refs/heads/feature/purepitch-core-isolated
+      - name: Upload runtime diff and regenerated golden
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: purepitch-runtime-diff
-          path: runtime-diff.json
+          name: purepitch-runtime-diff-and-golden
+          path: |
+            new/packages/purepitch-core/runtime-diff.json
+            new/packages/purepitch-core/test/golden/golden-master.json
           if-no-files-found: error
           retention-days: 14
