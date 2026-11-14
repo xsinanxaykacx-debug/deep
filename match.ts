@@ -123,19 +123,19 @@ function chooseContextualAction(
   // Şut ancak saha bölgesi, oyuncu profili ve baskı birlikte uygunsa seçilir.
   if (zone === 10) {
     const shotChance = clamp(
-      0.30 + (shooting - 10) * 0.018 +
-      (decisions - 10) * 0.008 - pressure * 0.16 +
+      0.22 + (shooting - 10) * 0.016 +
+      (decisions - 10) * 0.007 - pressure * 0.17 +
       (tactics.tempo - 50) * 0.001,
-      0.12, 0.62
+      0.08, 0.52
     );
     if (chance(shotChance)) return 'shot';
   }
   if ((zone === 9 || zone === 11) && shooting >= 13 && pressure < 0.58 &&
-      chance(clamp(0.10 + (shooting - 12) * 0.015, 0.06, 0.30))) {
+      chance(clamp(0.08 + (shooting - 12) * 0.012, 0.04, 0.24))) {
     return 'shot';
   }
   if (zone >= 6 && zone <= 8 && shooting >= 15 && pressure < 0.35 &&
-      chance(clamp(0.07 + (shooting - 15) * 0.008, 0.04, 0.18))) {
+      chance(clamp(0.05 + (shooting - 15) * 0.007, 0.03, 0.14))) {
     return 'shot';
   }
 
@@ -175,7 +175,7 @@ function applySubstitution(
   stats: MatchStats,
   events: string[]
 ): void {
-  if (minute < 58 || usedSubs.size >= 5 || team.bench.length === 0) return;
+  if (minute < 58 || usedSubs.size >= 3 || team.bench.length === 0) return;
 
   const candidates = lineup
     .filter(item => item.player.position !== 'GK' &&
@@ -328,7 +328,7 @@ export function simulateMatch(home: Team, away: Team): MatchState {
     const pressure = pressureLevel(st.zone, activeDef, defendingTeam.tactics);
 
     // Ev sahibi avantajı küçük bir karar/rahatlık etkisi; doğrudan gol bonusu değil.
-    const homeComfort = isHome ? 0.07 : 0;
+    const homeComfort = isHome ? 0.09 : 0;
     const action = chooseContextualAction(
       carrier, st.zone, Math.max(0, pressure - homeComfort),
       attackingTeam.tactics, attackCount
